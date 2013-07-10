@@ -1096,6 +1096,28 @@ public class SurveyDbAdapter {
 	}
 	
 	/**
+	 * count unsent survey respondents by surveyId
+	 * 
+	 * @param surveyId
+	 * @return
+	 */
+	// TODO check this function
+	public int countUnsentSurveyRespondents(String surveyId) {
+		String[] whereParams = { surveyId };
+		int i = 0;
+		Cursor cursor = database.rawQuery("SELECT COUNT(*) as theCount FROM survey_respondent WHERE survey_id = ? AND delivered_date = null",
+				whereParams);
+		if (cursor != null) {
+			if (cursor.moveToFirst()) {
+				i = cursor.getInt(0);
+			}
+			cursor.close();
+		}
+		return i;
+	}
+	
+	
+	/**
 	 * Lists all non-deleted surveys from the database
 	 */
 	public ArrayList<Survey> listSurveys(String language) {

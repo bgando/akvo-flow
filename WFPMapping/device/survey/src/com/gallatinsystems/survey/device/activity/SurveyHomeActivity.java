@@ -260,7 +260,7 @@ public class SurveyHomeActivity extends Activity implements OnItemClickListener 
 					Survey survey = menuViewAdapter.getSelectedSurvey(position);
 					if (survey != null) {
 						Intent i = new Intent(v.getContext(),
-								SurveyViewActivity.class);
+								SurveyOverviewActivity.class);
 						i.putExtra(ConstantUtil.USER_ID_KEY, currentUserId);
 						i.putExtra(ConstantUtil.SURVEY_ID_KEY, survey.getId());
 						startActivityForResult(i, SURVEY_ACTIVITY);

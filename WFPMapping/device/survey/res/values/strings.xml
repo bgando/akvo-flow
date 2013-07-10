@@ -213,4 +213,13 @@
 	<string name="addtestpoints">Add test points</string>
 	<string name="updateavail">Update Available</string>
 	<string name="clicktoinstall">Click to install</string>
+	<string name="survey">Survey:</string>
+	<string name="recordscollected">Complete records collected:</string>
+	<string name="recordsreadyforupload">Records ready for upload:</string>
+	<string name="savedsurveys">Partially completed records:</string>
+	<string name="problemwithupload">Failed upload:</string>
+	<string name="downloadrecords">Download records</string>
+	<string name="totalonserver">Total on server</string>
+	<string name="cachedonphone">Cached on phone</string>	
+	
 </resources>

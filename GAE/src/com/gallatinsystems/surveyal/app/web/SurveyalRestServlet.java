@@ -50,8 +50,10 @@ import com.gallatinsystems.survey.dao.SurveyDAO;
 import com.gallatinsystems.survey.domain.Question;
 import com.gallatinsystems.survey.domain.Survey;
 import com.gallatinsystems.surveyal.dao.SurveyedLocaleDao;
+import com.gallatinsystems.surveyal.dao.SurveyedLocaleSummaryDao;
 import com.gallatinsystems.surveyal.domain.SurveyalValue;
 import com.gallatinsystems.surveyal.domain.SurveyedLocale;
+import com.gallatinsystems.surveyal.domain.SurveyedLocaleSummary;
 import com.google.appengine.api.datastore.Entity;
 import com.google.appengine.api.taskqueue.Queue;
 import com.google.appengine.api.taskqueue.QueueFactory;
@@ -366,6 +368,17 @@ public class SurveyalRestServlet extends AbstractRestApiServlet {
 			if (locale != null && locale.getKey() != null && answers != null) {
 				locale.setLastSurveyedDate(instance.getCollectionDate());
 				locale.setLastSurveyalInstanceId(instance.getKey().getId());
+				// increment surveyedLocaleSummary count for this surveyId
+				SurveyedLocaleSummaryDao SLSdao = new SurveyedLocaleSummaryDao();
+				SurveyedLocaleSummary SLSummary = SLSdao.getBySurveyId(instance.getSurveyId());
+				if (SLSummary != null && SLSummary.getKey() != null) {
+					SLSummary.setCount(SLSummary.getCount() + 1);
+				} else {
+					SLSummary = new SurveyedLocaleSummary();
+					SLSummary.setCount(1L);
+				}
+				SLSdao.save(SLSummary);
+
 				instance.setSurveyedLocaleId(locale.getKey().getId());
 				List<SurveyalValue> values = constructValues(locale, answers);
 				if (values != null) {
@@ -412,6 +425,9 @@ public class SurveyalRestServlet extends AbstractRestApiServlet {
 						}
 					}
 				}
+				// not needed?
+				surveyInstanceDao.save(instance);
+				surveyedLocaleDao.save(locale);
 			}
 		}
 	}

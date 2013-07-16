@@ -42,6 +42,7 @@ public class SurveyedLocale extends BaseDomain {
 	private static final long serialVersionUID = -7908506708459480822L;
 	private String organization;
 	private String systemIdentifier;
+	private Long projectId;
 	private String identifier;
 	private String countryCode;
 	private String sublevel1;
@@ -206,6 +207,14 @@ public class SurveyedLocale extends BaseDomain {
 
 	public String getCurrentStatus() {
 		return currentStatus;
+	}
+
+	public Long getProjectId() {
+		return projectId;
+	}
+
+	public void setProjectId(Long projectId) {
+		this.projectId = projectId;
 	}
 
 }

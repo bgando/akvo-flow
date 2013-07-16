@@ -31,6 +31,7 @@ public class SurveyedLocaleDto extends BaseDto {
 	private static final long serialVersionUID = -261120063665344559L;
 	private String organization;
 	private String systemIdentifier;
+	private Long projectId;
 	private String identifier;
 	private String countryCode;
 	private String sublevel1;
@@ -191,6 +192,14 @@ public class SurveyedLocaleDto extends BaseDto {
 
 	public String getCurrentStatus() {
 		return currentStatus;
+	}
+
+	public Long getProjectId() {
+		return projectId;
+	}
+
+	public void setProjectId(Long projectId) {
+		this.projectId = projectId;
 	}
 
 }

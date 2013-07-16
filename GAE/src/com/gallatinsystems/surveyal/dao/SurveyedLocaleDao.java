@@ -119,6 +119,25 @@ public class SurveyedLocaleDao extends BaseDAO<SurveyedLocale> {
 				SurveyalValue.class);
 	}
 
+	
+	/**
+	 * lists locales by projectId
+	 * 
+	 * @param projectId
+	 * @param cursor
+	 * @return
+	 */
+	
+	@SuppressWarnings("unchecked")
+	public List<SurveyedLocale> listLocalesByProjectId(Long projectId, String cursor) {
+		PersistenceManager pm = PersistenceFilter.getManager();
+		String queryString = "projectId == :p1";
+		javax.jdo.Query query = pm.newQuery(SurveyedLocale.class,queryString);
+		List<SurveyedLocale> results = (List<SurveyedLocale>) query.execute(projectId);
+
+		return results;
+	}
+	
 	/**
 	 * lists all locales that match the geo constraints passed in
 	 * 

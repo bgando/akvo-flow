@@ -34,6 +34,7 @@ public class SurveyDto extends BaseDto implements NamedObject {
 	private List<QuestionGroupDto> questionGroupList;
 	private String path;
 	private Long surveyGroupId = null;
+	private Long projectId;
 	private Long instanceCount;
 	private String pointType;
 	private String defaultLanguageCode;
@@ -185,6 +186,14 @@ public class SurveyDto extends BaseDto implements NamedObject {
 
 	public void setSourceId(Long sourceId) {
 		this.sourceId = sourceId;
+	}
+
+	public Long getProjectId() {
+		return projectId;
+	}
+
+	public void setProjectId(Long projectId) {
+		this.projectId = projectId;
 	}
 
 }

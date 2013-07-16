@@ -32,14 +32,14 @@ public class SurveyedLocaleSummaryDao extends BaseDAO<SurveyedLocaleSummary> {
 	}
 	
 	/**
-	 * gets a single summary object by surveyId. If the number is not unique (this
+	 * gets a single summary object by projectId. If the number is not unique (this
 	 * shouldn't happen), it returns the first instance found.
 	 * 
-	 * @param imei
+	 * @param projectId
 	 * @return
 	 */
-	public SurveyedLocaleSummary getBySurveyId(Long surveyId) {
-		return super.findByProperty("surveyId", surveyId, "Long");
+	public SurveyedLocaleSummary getByProjectId(Long projectId) {
+		return super.findByProperty("projectId", projectId, "Long");
 	}
 
 }

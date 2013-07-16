@@ -49,6 +49,7 @@ public class Survey extends BaseDomain {
 	private Long instanceCount;
 	private String path = null;
 	private Long surveyGroupId;
+	private Long projectId;
 	private String pointType;
 	private String defaultLanguageCode;
 	private Boolean requireApproval;
@@ -195,6 +196,14 @@ public class Survey extends BaseDomain {
 
 	public Boolean getRequireApproval() {
 		return requireApproval;
+	}
+
+	public Long getProjectId() {
+		return projectId;
+	}
+
+	public void setProjectId(Long projectId) {
+		this.projectId = projectId;
 	}
 
 }

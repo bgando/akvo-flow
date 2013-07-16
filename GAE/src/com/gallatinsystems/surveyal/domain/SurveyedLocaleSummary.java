@@ -34,7 +34,7 @@ public class SurveyedLocaleSummary extends BaseDomain {
 	private static final long serialVersionUID = -790856708459480822L;
 	
 	private Long count;
-	private Long surveyId;
+	private Long projectId;
 	
 	public Long getCount() {
 		return count;
@@ -43,13 +43,14 @@ public class SurveyedLocaleSummary extends BaseDomain {
 	public void setCount(Long count) {
 		this.count = count;
 	}
-	
-	public Long getSurveyId() {
-		return surveyId;
+
+	public Long getProjectId() {
+		return projectId;
 	}
-	
-	public void setSurveyId(Long surveyId) {
-		this.surveyId = surveyId;
+
+	public void setProjectId(Long projectId) {
+		this.projectId = projectId;
 	}
+
 	
 }

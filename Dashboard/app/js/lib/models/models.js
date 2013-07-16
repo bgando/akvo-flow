@@ -62,6 +62,7 @@ FLOW.Survey = FLOW.BaseModel.extend({
   path: DS.attr('string'),
   pointType: DS.attr('string'),
   surveyGroupId: DS.attr('number'),
+  projectId: DS.attr('number'),
   createdDateTime: DS.attr('number'),
   lastUpdateDateTime: DS.attr('number'),
   instanceCount: DS.attr('number'),

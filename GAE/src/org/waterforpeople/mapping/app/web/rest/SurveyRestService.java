@@ -271,6 +271,9 @@ public class SurveyRestService {
 
 		if (surveyDto.getSourceId() == null) {
 			s = newSurvey(surveyDto);
+			// FIXME for the moment, the projectId is identical to the surveyId
+			s.setProjectId(s.getKey().getId());
+			surveyDao.save(s);
 		} else {
 			s = copySurvey(surveyDto);
 		}

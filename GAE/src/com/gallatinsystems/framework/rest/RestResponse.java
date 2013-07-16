@@ -27,7 +27,7 @@ import java.io.Serializable;
 public class RestResponse implements Serializable{
 
 	private static final long serialVersionUID = -4783160185098390267L;
-	private int resultCount;
+	private Long resultCount;
 	private String message;
 	private String code;
 
@@ -47,11 +47,11 @@ public class RestResponse implements Serializable{
 		this.message = message;
 	}
 
-	public int getResultCount() {
+	public Long getResultCount() {
 		return resultCount;
 	}
 
-	public void setResultCount(int resultCount) {
+	public void setResultCount(Long resultCount) {
 		this.resultCount = resultCount;
 	}
 

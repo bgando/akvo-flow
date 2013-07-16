@@ -34,6 +34,7 @@
 		<activity android:name=".activity.RegionPlotActivity" />
 		<activity android:name=".activity.PreferencesActivity" />
 		<activity android:name=".activity.ImageBrowserActivity" />
+		<activity android:name=".activity.DownloadRecordsActivity" />
 		<activity android:name=".activity.NearbyItemActivity"/>
 		<activity android:name=".activity.NearbyItemDetailActivity"/>
 		<activity android:name=".activity.SurveyReviewActivity"/>

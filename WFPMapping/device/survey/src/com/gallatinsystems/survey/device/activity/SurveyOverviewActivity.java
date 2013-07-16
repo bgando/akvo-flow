@@ -37,7 +37,7 @@ import android.widget.AdapterView;
 import android.widget.TextView;
 
 /**
- * Activity to list all "nearby" access points
+ * Activity to list all "nearby" data records
  * 
  * @author Mark Tiele Westra
  */
@@ -144,11 +144,11 @@ public class SurveyOverviewActivity extends Activity {
 		Survey survey = databaseAdapter.findSurvey(surveyId);
 
 		if (survey != null) {
-			// TODO create downloadRecordsActivity
-			// Intent i = new Intent(view.getContext(), DownloadRecordsActivity.class);
-			// i.putExtra(ConstantUtil.USER_ID_KEY, userId);
-			// i.putExtra(ConstantUtil.SURVEY_ID_KEY, survey.getId());
-			// startActivityForResult(i, DOWNLOAD_RECORDS_ACTIVITY);
+
+			 Intent i = new Intent(view.getContext(), DownloadRecordsActivity.class);
+			 i.putExtra(ConstantUtil.USER_ID_KEY, userId);
+			 i.putExtra(ConstantUtil.SURVEY_ID_KEY, survey.getId());
+			 startActivityForResult(i, DOWNLOAD_RECORDS_ACTIVITY);
 
 		} else {
 			Log.e(TAG, "Survey for selection is null");

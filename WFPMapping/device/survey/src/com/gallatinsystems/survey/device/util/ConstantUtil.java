@@ -162,6 +162,8 @@ public class ConstantUtil {
 	public static final String SEND = "SEND";
 	public static final String OP_TYPE_KEY = "TYPE";
 	public static final String FORCE_KEY = "FORCE";
+	public static final int RECORDS_SERVER = 1;
+	public static final int RECORDS_DEVICE = 2;
 
 	/**
 	 * notification types

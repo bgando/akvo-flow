@@ -46,6 +46,7 @@ public class DownloadRecordsActivity extends Activity {
 
 	private TextView surveyField;
 	private TextView totalRecordsOnServerField;
+	private TextView cachedOnPhoneField;
 	private SurveyDbAdapter databaseAdapter;
 	private String userId;
 	private String surveyId;
@@ -53,10 +54,11 @@ public class DownloadRecordsActivity extends Activity {
 	private Handler handler = new Handler() {
 		@Override
 		public void handleMessage(Message message) {
-			Log.d(TAG, "inside download records activity handler");
-			Log.d(TAG, "result:" + Integer.toString(message.arg2));
-			if (message.arg1 == RESULT_OK) {
+			if (message.arg1 == ConstantUtil.RECORDS_SERVER) {
 				totalRecordsOnServerField.setText(Integer
+						.toString(message.arg2));
+			} else if (message.arg1 == ConstantUtil.RECORDS_SERVER){
+				cachedOnPhoneField.setText(Integer
 						.toString(message.arg2));
 			}
 		}
@@ -70,7 +72,7 @@ public class DownloadRecordsActivity extends Activity {
 
 		surveyField = (TextView) findViewById(R.id.surveyField);
 		totalRecordsOnServerField = (TextView) findViewById(R.id.totalonserver);
-		TextView cachedOnPhoneField = (TextView) findViewById(R.id.cachedonphone);
+		cachedOnPhoneField = (TextView) findViewById(R.id.cachedonphone);
 
 		databaseAdapter = new SurveyDbAdapter(this);
 		databaseAdapter.open();
@@ -109,13 +111,18 @@ public class DownloadRecordsActivity extends Activity {
 		Messenger messenger = new Messenger(handler);
 		intent.putExtra("MESSENGER", messenger);
 		intent.putExtra(ConstantUtil.SURVEY_ID_KEY, surveyId);
-		Log.d(TAG, "trying.....start service");
+		intent.putExtra("ACTION", "getcount");
 		startService(intent);
 
 	}
 
 	public void downloadRecords(View view) {
-		// TODO
+		Intent intent = new Intent(this, RecordDataService.class);
+		Messenger messenger = new Messenger(handler);
+		intent.putExtra("MESSENGER", messenger);
+		intent.putExtra(ConstantUtil.SURVEY_ID_KEY, surveyId);
+		intent.putExtra("ACTION", "getrecords");
+		startService(intent);
 	}
 
 	public void deleteCachedRecords(View view) {

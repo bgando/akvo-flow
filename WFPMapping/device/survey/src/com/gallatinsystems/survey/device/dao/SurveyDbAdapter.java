@@ -22,6 +22,9 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.UUID;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
@@ -91,6 +94,12 @@ public class SurveyDbAdapter {
 	public static final String EXPORTED_FLAG_COL = "exported_flag";
 	public static final String UUID_COL = "uuid";
 
+	// surveyed locale cols. Lat, Lon, status, answer defined above
+	public static final String PROJECT_COL = "project_id";
+	public static final String LOCALE_COL = "locale_id";
+	public static final String LAST_SUBMITTED_COL = "last_submitted_date";
+	public static final String SURVEYED_LOCALE_COL = "surveyed_locale_id";
+	public static final String QUESTION_COL = "question_id";
 	private static final String TAG = "SurveyDbAdapter";
 	private DatabaseHelper databaseHelper;
 	private SQLiteDatabase database;
@@ -119,15 +128,11 @@ public class SurveyDbAdapter {
 
 	private static final String TRANSMISSION_HISTORY_TABLE_CREATE = "create table transmission_history (_id integer primary key, survey_respondent_id integer not null, status text, filename text, trans_start_date long, delivered_date long);";
 
-	private static final String[] DEFAULT_INSERTS = new String[] {
-			// "insert into survey values(999991,'Sample Survey', 1.0,'Survey','res','testsurvey','en','N','N')",
-			// "insert into survey values(1039101,'Houshold Interview', 1.0,'Survey','res','hh1039101','en','N','N')",
-			// "insert into survey values(1062135,'Public Institution', 1.0,'Survey','res','pi1062135','en','N','N')",
-			// "insert into survey values(1086117,'CommunityWaterPoint', 1.0,'Survey','res','cwp1086117','en','N','N')",
+	private static final String SURVEYED_LOCALE_TABLE_CREATE = "create table surveyed_locale (_id integer primary key autoincrement, project_id integer not null, locale_id text, last_submitted_date text, lat real, lon real, status integer)";
 
-			// "insert into survey values(943186,'Community Water Point', 1.0,'Survey','res','cw943186','en','N','N')",
-			// "insert into survey values(1007024,'Household Interview', 1.0,'Survey','res','hh1007024','en','N','N')",
-			// "insert into survey values(971189,'Public Institution', 1.0,'Survey','res','pi971189','en','N','N')",
+	private static final String SURVEYED_LOCALE_VAL_TABLE_CREATE = "create table surveyed_locale_val (_id integer primary key autoincrement, surveyed_locale_id integer not null, question_id text, answer_value text)";
+
+	private static final String[] DEFAULT_INSERTS = new String[] {
 		
 			// insert default values
 			"insert into preferences values('survey.language','0')",
@@ -158,12 +163,14 @@ public class SurveyDbAdapter {
 	private static final String PREFERENCES_TABLE = "preferences";
 	private static final String POINT_OF_INTEREST_TABLE = "point_of_interest";
 	private static final String TRANSMISSION_HISTORY_TABLE = "transmission_history";
+	private static final String SURVEYED_LOCALE_TABLE = "surveyed_locale";
+	private static final String SURVEYED_LOCALE_VAL_TABLE = "surveyed_locale_val";
 
 	private static final String RESPONSE_JOIN = "survey_respondent LEFT OUTER JOIN survey_response ON (survey_respondent._id = survey_response.survey_respondent_id) LEFT OUTER JOIN user ON (user._id = survey_respondent.user_id)";
 	private static final String PLOT_JOIN = "plot LEFT OUTER JOIN plot_point ON (plot._id = plot_point.plot_id) LEFT OUTER JOIN user ON (user._id = plot.user_id)";
 	private static final String RESPONDENT_JOIN = "survey_respondent LEFT OUTER JOIN survey ON (survey_respondent.survey_id = survey._id)";
 
-	private static final int DATABASE_VERSION = 75;
+	private static final int DATABASE_VERSION = 76;
 
 	private final Context context;
 
@@ -198,6 +205,8 @@ public class SurveyDbAdapter {
 			db.execSQL(PREFERENCES_TABLE_CREATE);
 			db.execSQL(POINT_OF_INTEREST_TABLE_CREATE);
 			db.execSQL(TRANSMISSION_HISTORY_TABLE_CREATE);
+			db.execSQL(SURVEYED_LOCALE_TABLE_CREATE);
+			db.execSQL(SURVEYED_LOCALE_VAL_TABLE_CREATE);
 			for (int i = 0; i < DEFAULT_INSERTS.length; i++) {
 				db.execSQL(DEFAULT_INSERTS[i]);
 			}			
@@ -218,6 +227,8 @@ public class SurveyDbAdapter {
 				db.execSQL("DROP TABLE IF EXISTS " + PREFERENCES_TABLE);
 				db.execSQL("DROP TABLE IF EXISTS " + POINT_OF_INTEREST_TABLE);
 				db.execSQL("DROP TABLE IF EXISTS " + TRANSMISSION_HISTORY_TABLE);
+				db.execSQL("DROP TABLE IF EXISTS " + SURVEYED_LOCALE_TABLE);
+				db.execSQL("DROP TABLE IF EXISTS " + SURVEYED_LOCALE_VAL_TABLE);
 				onCreate(db);
 			} else if (oldVersion < 75) {
 
@@ -290,6 +301,9 @@ public class SurveyDbAdapter {
 					runSQL("insert into preferences values('remoteexception.upload','0')",
 							db);
 				}
+			} else if (oldVersion < 76){
+				runSQL(SURVEYED_LOCALE_TABLE_CREATE, db);
+				runSQL(SURVEYED_LOCALE_VAL_TABLE_CREATE, db);
 			}
 
 			// now handle defaults
@@ -1695,5 +1709,139 @@ public class SurveyDbAdapter {
 		updatedValues.put(DELETED_COL, "Y");
 		database.update(USER_TABLE, updatedValues, PK_ID_COL + " = ?",
 				new String[] { id.toString() });
+	}
+
+	/**
+	 * retrieves a surveyedLocale by Id
+	 * the Id is a UUID string
+	 *
+	 * @param id
+	 * @return
+	 */
+	public Cursor findSurveyedLocaleByIdentifier(String id) {
+		Cursor cursor = database.query(SURVEYED_LOCALE_TABLE, new String[] { PK_ID_COL,
+				LOCALE_COL, PROJECT_COL, LAST_SUBMITTED_COL, LAT_COL, LON_COL, STATUS_COL }, LOCALE_COL + "=?",
+				new String[] { id }, null, null, null);
+		if (cursor != null) {
+			cursor.moveToFirst();
+		}
+		return cursor;
+	}
+
+	/**
+	 * creates or updates a Surveyed Locale record based on the data passed in. The id is a UUID string.
+	 *
+	 * @param id
+	 * @param projectId
+	 * @param lastSDate
+	 * @param lat
+	 * @param lon
+	 * @return
+	 */
+	public long createOrUpdateSurveyedLocale(String id, int projectId, String lastSDate, Double lat, Double lon) {
+		ContentValues initialValues = new ContentValues();
+		initialValues.put(LOCALE_COL, id);
+		initialValues.put(PROJECT_COL, projectId);
+		initialValues.put(LAST_SUBMITTED_COL, lastSDate);
+		initialValues.put(LAT_COL, lat);
+		initialValues.put(LON_COL, lon);
+		initialValues.put(STATUS_COL, 0);
+
+		Cursor existingSL = findSurveyedLocaleByIdentifier(id);
+		Long slId = null;
+		if (existingSL != null && existingSL.moveToFirst()){
+			slId = (long) existingSL.getInt(existingSL.getColumnIndexOrThrow(PK_ID_COL));
+		}
+
+		if (slId == null) {
+			slId = database.insert(SURVEYED_LOCALE_TABLE, null, initialValues);
+		} else {
+			if (database.update(SURVEYED_LOCALE_TABLE, initialValues, PK_ID_COL + "=?",
+					new String[] { slId.toString() }) > 0) {
+			}
+		}
+		existingSL.close();
+		return slId;
+	}
+
+
+	/**
+	 * returns a cursor that lists all surveyed locales
+	 * used for testing
+	 * @return
+	 */
+	public Cursor listAllSurveyedLocales() {
+		Cursor cursor = database.query(SURVEYED_LOCALE_TABLE, new String[] {
+				PK_ID_COL, LOCALE_COL, PROJECT_COL, LAST_SUBMITTED_COL, LAT_COL, LON_COL, STATUS_COL },
+				null, null, null, null, null, null);
+		if (cursor != null) {
+			cursor.moveToFirst();
+		}
+		return cursor;
+	}
+
+	/**
+	 * returns a cursor that lists all surveyed locale values
+	 * used for testing
+	 *
+	 * @return
+	 */
+	public Cursor listAllSurveyedLocaleValues() {
+		Cursor cursor = database.query(SURVEYED_LOCALE_VAL_TABLE, new String[] {
+				PK_ID_COL, QUESTION_COL, ANSWER_COL, SURVEYED_LOCALE_COL},
+				null, null, null, null, null, null);
+		if (cursor != null) {
+			cursor.moveToFirst();
+		}
+		return cursor;
+	}
+
+	/**
+	 * deletes all existing surveyalValues for the surveyed locale id passed in.
+	 * @param slId
+	 */
+	public void deleteSurveyalValuesById(Long slId){
+		database.delete(SURVEYED_LOCALE_VAL_TABLE, SURVEYED_LOCALE_COL + "=?",
+				new String[] { slId.toString() });
+	}
+
+	/**
+	 * deletes all existing surveyalValues in the database
+	 * @return
+	 */
+	public void deleteAllSurveyalValue(){
+		database.delete(SURVEYED_LOCALE_VAL_TABLE, null, null);
+	}
+
+	/**
+	 * deletes all existing surveyalValues for the surveyed locale id passed in
+	 * and then recreates them based on the arrays passed in.
+	 * @param slId
+	 * @param questionIdArray
+	 * @param answerValArray
+	 * @return
+	 */
+	public void createOrUpdateSurveyalValues(long slId, JSONArray questionIdArray, JSONArray answerValArray) {
+		// first delete all surveyalValues with slId = surveyed_locale_id
+		deleteSurveyalValuesById(Long.valueOf(slId));
+
+		// recreate all surveyalValues.
+		boolean failed = false;
+		for (int i = 0; i < questionIdArray.length(); i++){
+			failed = false;
+			ContentValues initialValues = new ContentValues();
+			initialValues.put(SURVEYED_LOCALE_COL, slId);
+			try {
+				initialValues.put(QUESTION_COL, questionIdArray.getInt(i));
+				initialValues.put(ANSWER_COL, answerValArray.getString(i));
+			} catch (JSONException e) {
+				Log.e(TAG, "Problem with parsing questionId - answer pairs" );
+				failed = true;
+			}
+
+			if (!failed) {
+				database.insert(SURVEYED_LOCALE_VAL_TABLE, null, initialValues);
+			}
+		}
 	}
 }

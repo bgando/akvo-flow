@@ -338,31 +338,6 @@ public class SurveyalRestServlet extends AbstractRestApiServlet {
 				instance.setSublevel4(geoPlace.getSub4());
 				instance.setSublevel5(geoPlace.getSub5());
 				instance.setSublevel6(geoPlace.getSub6());
-				if (answers != null) {
-					// look for the Community metric
-					List<Metric> metrics = metricDao.listMetrics(
-							COMMUNITY_METRIC_NAME, null, null, null, null);
-					if (metrics != null) {
-						List<SurveyMetricMapping> mappings = new ArrayList<SurveyMetricMapping>();
-						for (Metric m : metrics) {
-							List<SurveyMetricMapping> temp = metricMappingDao
-									.listMetricsBySurveyAndMetric(m.getKey()
-											.getId(), instance.getSurveyId());
-							if (temp != null) {
-								mappings.addAll(temp);
-							}
-						}
-						for (SurveyMetricMapping mapping : mappings) {
-							for (QuestionAnswerStore ans : answers) {
-								if (ans.getQuestionID().equals(
-										mapping.getSurveyQuestionId().toString())) {
-									instance.setCommunity(ans.getValue());
-									break;
-								}
-							}
-						}
-					}
-				}
 			}
 
 			if (locale != null && locale.getKey() != null && answers != null) {
@@ -383,62 +358,12 @@ public class SurveyalRestServlet extends AbstractRestApiServlet {
 				List<SurveyalValue> values = constructValues(locale, answers);
 				if (values != null) {
 					surveyedLocaleDao.save(values);
-					if (!useConfigStatusScore) {
-						// now check the values to see if we have a status to
-						// update
-						// check the metrics first
-						boolean found = false;
-						for (SurveyalValue val : values) {
-							if (isStatus(val.getMetricName())
-									&& val.getStringValue() != null) {
-								found = true;
-								locale.setCurrentStatus(val.getStringValue());
-								break;
-							}
-						}
-						// if no luck, check the question text
-						if (!found) {
-							for (SurveyalValue val : values) {
-								if (isStatus(val.getQuestionText())
-										&& val.getStringValue() != null) {
-									found = true;
-									locale.setCurrentStatus(val
-											.getStringValue());
-									break;
-								}
-							}
-						}
-					} else if (useDynamicScoring) {
-						
-					} else {
-						for (SurveyalValue val : values) {
-							if (val.getQuestionText() != null
-									&& val.getQuestionText().toLowerCase()
-											.contains(statusFragment)) {
-								String scoredField = scoredVals.get(val
-										.getStringValue());
-								if (scoredField == null) {
-									scoredField = scoredVals.get(DEFAULT);
-								}
-								locale.setCurrentStatus(scoredField);
-							}
-						}
-					}
 				}
 				// not needed?
 				surveyInstanceDao.save(instance);
 				surveyedLocaleDao.save(locale);
 			}
 		}
-	}
-
-	private boolean isStatus(String name) {
-		if (name != null) {
-			if (name.trim().toLowerCase().contains("status")) {
-				return true;
-			}
-		}
-		return false;
 	}
 
 	/**

@@ -19,6 +19,8 @@ package org.waterforpeople.mapping.app.web.dto;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Date;
+
 
 /**
  * dto that can hold record data
@@ -30,10 +32,10 @@ public class RecordDataDto implements Serializable {
 
 	private static final long serialVersionUID = -850583183416882347L;
 
-	private String identifier;
-	private Double latitude;
-	private Double longitude;
-
+	private String id;
+	private Double lat;
+	private Double lon;
+	private Date lastSDate;
 	private List<Long> questionIds;
 	private List<String> answerValues;
 
@@ -42,20 +44,20 @@ public class RecordDataDto implements Serializable {
 		answerValues = new ArrayList<String>();
 	}
 
-	public Double getLatitude() {
-		return latitude;
+	public Double getLat() {
+		return lat;
 	}
 
-	public void setLatitude(Double latitude) {
-		this.latitude = latitude;
+	public void setLat(Double lat) {
+		this.lat = lat;
 	}
 
-	public Double getLongitude() {
-		return longitude;
+	public Double getLon() {
+		return lon;
 	}
 
-	public void setLongitude(Double longitude) {
-		this.longitude = longitude;
+	public void setLon(Double lon) {
+		this.lon = lon;
 	}
 	
 	public List<Long> getQuestionIds() {
@@ -79,11 +81,19 @@ public class RecordDataDto implements Serializable {
 		answerValues.add(answerValue != null ? answerValue : "");
 	}
 
-	public String getIdentifier() {
-		return identifier;
+	public String getId() {
+		return id;
 	}
 
-	public void setIdentifier(String identifier) {
-		this.identifier = identifier;
+	public void setId(String id) {
+		this.id = id;
+	}
+
+	public Date getLastSDate() {
+		return lastSDate;
+	}
+
+	public void setLastSDate(Date lastSDate) {
+		this.lastSDate = lastSDate;
 	}
 }

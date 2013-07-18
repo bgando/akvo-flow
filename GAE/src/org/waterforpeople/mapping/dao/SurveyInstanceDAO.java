@@ -175,6 +175,20 @@ public class SurveyInstanceDAO extends BaseDAO<SurveyInstance> {
 				continue;
 			}
 
+			// if one of the answer types is IDENT, interpret this as the
+			// identifier of the surveyedLocale
+			if (parts[3].equals("IDENT")){
+				SurveyedLocaleDao slDao = new SurveyedLocaleDao();
+				SurveyedLocale sl = slDao.getByIdentifier(parts[4]);
+				// if we find an existing surveyedLocale with the same identifier,
+				// set the surveyedLocaleId field on the instance
+				// If we don't find it, it will be handled in SurveyalRestServlet.
+				if (sl != null){
+					si.setSurveyedLocaleId(sl.getKey().getId());
+					si = save(si);
+				}
+			}
+
 			qas.setSurveyId(si.getSurveyId());
 			qas.setSurveyInstanceId(si.getKey().getId());
 			qas.setArbitratyNumber(new Long(parts[1].trim()));

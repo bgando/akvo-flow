@@ -172,6 +172,16 @@ public class SurveyDAO extends BaseDAO<Survey> {
 	}
 
 	/**
+	 * lists all surveys in a given project
+	 *
+	 * @param surveyGroupId
+	 * @return
+	 */
+	public List<Survey> listSurveysByProject(Long projectId) {
+		return listByProperty("projectId", projectId, "Long");
+	}
+
+	/**
 	 * gets a survey by the surveyGroupId and survey code
 	 * 
 	 * @param code

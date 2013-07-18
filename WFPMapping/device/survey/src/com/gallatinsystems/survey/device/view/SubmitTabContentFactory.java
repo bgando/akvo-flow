@@ -50,6 +50,7 @@ public class SubmitTabContentFactory extends SurveyTabContentFactory {
 	private static final int DEFAULT_WIDTH = 200;
 	private static final int HEADING_TEXT_SIZE = 20;
 	private static final String HEADING_COLOR = "red";
+	private static final int RESULT_OK = 1;
 
 	public SubmitTabContentFactory(SurveyViewActivity c,
 			SurveyDbAdapter dbAdaptor, float textSize, String defaultLang,
@@ -82,13 +83,10 @@ public class SubmitTabContentFactory extends SurveyTabContentFactory {
 						Intent i = new Intent(
 								ConstantUtil.DATA_AVAILABLE_INTENT);
 						context.sendBroadcast(i);
-						ViewUtil.showConfirmDialog(
-								R.string.submitcompletetitle,
-								R.string.submitcompletetext, context);
-						if (context.isSingleSurvey())
-							context.finish();
-						else
-							startNewSurvey();
+
+						Intent intent = context.getIntent();
+						context.setResult(RESULT_OK, intent);
+						context.finish();
 					}
 				});
 		TableLayout table = new TableLayout(context);

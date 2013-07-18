@@ -26,16 +26,17 @@ import org.json.JSONObject;
 import org.waterforpeople.mapping.app.web.dto.RecordDataDto;
 import org.waterforpeople.mapping.app.web.dto.RecordDataRequest;
 import org.waterforpeople.mapping.app.web.dto.RecordDataResponse;
-import org.waterforpeople.mapping.dao.QuestionAnswerStoreDao;
-import org.waterforpeople.mapping.dao.SurveyInstanceDAO;
-import org.waterforpeople.mapping.domain.QuestionAnswerStore;
-import org.waterforpeople.mapping.domain.SurveyInstance;
 
 import com.gallatinsystems.framework.rest.AbstractRestApiServlet;
 import com.gallatinsystems.framework.rest.RestRequest;
 import com.gallatinsystems.framework.rest.RestResponse;
+import com.gallatinsystems.survey.dao.QuestionDao;
+import com.gallatinsystems.survey.dao.SurveyDAO;
+import com.gallatinsystems.survey.domain.Question;
+import com.gallatinsystems.survey.domain.Survey;
 import com.gallatinsystems.surveyal.dao.SurveyedLocaleDao;
 import com.gallatinsystems.surveyal.dao.SurveyedLocaleSummaryDao;
+import com.gallatinsystems.surveyal.domain.SurveyalValue;
 import com.gallatinsystems.surveyal.domain.SurveyedLocale;
 import com.gallatinsystems.surveyal.domain.SurveyedLocaleSummary;
 
@@ -76,9 +77,9 @@ public class RecordDataServlet extends AbstractRestApiServlet {
 			SurveyedLocaleSummaryDao SLSdao = new SurveyedLocaleSummaryDao();
 			SurveyedLocaleSummary SLSummary = SLSdao.getByProjectId(rdReq.getProjectId());
 			if (SLSummary != null && SLSummary.getKey() != null) {
-				resp.setResultCount(SLSummary.getCount());
+				resp.setRecordCount(SLSummary.getCount());
 			} else {
-				resp.setResultCount(0L);
+				resp.setRecordCount(0L);
 			}
 			return resp;
 		}
@@ -86,45 +87,51 @@ public class RecordDataServlet extends AbstractRestApiServlet {
 		List<SurveyedLocale> results = surveyedLocaleDao
 				.listLocalesByProjectId(rdReq.getProjectId(),rdReq.getCursor());
 
-		return convertToResponse(results, SurveyedLocaleDao.getCursor(results));
+		return convertToResponse(results, rdReq.getProjectId(), SurveyedLocaleDao.getCursor(results));
 	}
 
 	/**
-	 * converts the domain objects to dtos and then installs them in an
+	 * converts the domain objects to dtos and then installs them in a
 	 * RecordDataResponse object
 	 */
-	protected RecordDataResponse convertToResponse(List<SurveyedLocale> slList,
+	protected RecordDataResponse convertToResponse(List<SurveyedLocale> slList, Long projectId,
 			String cursor) {
 		RecordDataResponse resp = new RecordDataResponse();
 		if (slList != null) {
 			List<RecordDataDto> dtoList = new ArrayList<RecordDataDto>();
-			SurveyInstanceDAO siDao = new SurveyInstanceDAO();
-			QuestionAnswerStoreDao qaDao = new QuestionAnswerStoreDao();
+			SurveyDAO sDao = new SurveyDAO();
+			QuestionDao qDao = new QuestionDao();
+			List<Survey> surveyList = sDao.listSurveysByProject(projectId);
+			List<Question> QuestionList= new ArrayList<Question>();
+			// get all the questions from all the surveys, and add them to surveyQuestionList
+			if (surveyList != null && surveyList.size() > 0){
+				for (Survey s : surveyList){
+					List<Question> questions = qDao.listQuestionsBySurvey(s.getKey().getId());
+					if (questions !=null){
+						QuestionList.addAll(questions);
+					}
+				}
+			}
+
+			SurveyedLocaleDao slDao = new SurveyedLocaleDao();
 			for (SurveyedLocale sl : slList) {
-
 				RecordDataDto dto = new RecordDataDto();
-				dto.setIdentifier(sl.getIdentifier());
-				dto.setLatitude(sl.getLatitude());
-				dto.setLongitude(sl.getLongitude());
+				dto.setId(sl.getIdentifier());
+				dto.setLastSDate(sl.getLastSurveyedDate());
+				dto.setLat(sl.getLatitude());
+				dto.setLon(sl.getLongitude());
 
-				List<SurveyInstance> siList = siDao.listInstancesByLocale(sl
-						.getKey().getId(), null, null, null);
-				if (siList != null && siList.size() > 0) {
-					SurveyInstance si = siList.get(0);
-					if (si != null && si.getKey() != null) {
-						List<QuestionAnswerStore> qaList = qaDao
-								.listBySurveyInstance(si.getKey().getId(),
-										null, null);
-						if (qaList != null && qaList.size() > 0) {
-							for (QuestionAnswerStore qa : qaList) {
-								// exclude type GEO and PHOTO
-								if (!qa.getType().equals("GEO")
-										&& !qa.getType().equals("IMAGE")) {
-									dto.addProperty(
-											Long.parseLong(qa.getQuestionID()),
-											qa.getValue() != null ? qa
-													.getValue() : "");
-								}
+				// for each question, get the latest surveyalValue
+				// with that surveyedLocaleId and questionId and order by time desc
+				if (QuestionList.size() > 0){
+					for (Question q : QuestionList){
+						List<SurveyalValue> sv = slDao.listValuesByLocaleAndQuestion(sl.getKey().getId(),q.getKey().getId());
+						if (sv != null && sv.size() > 0) {
+							if (!sv.get(0).getQuestionType().equals("GEO")
+									&& !sv.get(0).getQuestionType().equals("IMAGE")) {
+								dto.addProperty(
+										sv.get(0).getSurveyQuestionId(),
+										sv.get(0).getStringValue() != null ? sv.get(0).getStringValue() : "");
 							}
 						}
 					}
@@ -144,15 +151,19 @@ public class RecordDataServlet extends AbstractRestApiServlet {
 	protected void writeOkResponse(RestResponse resp) throws Exception {
 		getResponse().setStatus(200);
 		RecordDataResponse rdResp = (RecordDataResponse) resp;
-		JSONObject result = new JSONObject(rdResp, true);
-		JSONArray arr = result.getJSONArray("recordData");
-		if (arr != null) {
-			for (int i = 0; i < arr.length(); i++) {
-				((JSONObject) arr.get(i)).put("questionIds", rdResp
-						.getRecordData().get(i).getQuestionIds());
+		JSONObject result = new JSONObject(rdResp, false);
 
-				((JSONObject) arr.get(i)).put("answerValues", rdResp
-						.getRecordData().get(i).getAnswerValues());
+		if (rdResp.getRecordCount() == null) {
+
+			JSONArray arr = result.getJSONArray("recordData");
+			if (arr != null) {
+				for (int i = 0; i < arr.length(); i++) {
+					((JSONObject) arr.get(i)).put("questionIds", rdResp
+							.getRecordData().get(i).getQuestionIds());
+
+					((JSONObject) arr.get(i)).put("answerValues", rdResp
+							.getRecordData().get(i).getAnswerValues());
+				}
 			}
 		}
 		getResponse().getWriter().println(result.toString());

@@ -119,6 +119,36 @@ public class SurveyedLocaleDao extends BaseDAO<SurveyedLocale> {
 				SurveyalValue.class);
 	}
 
+	/**
+	 * lists all SurveyalValues for a single Locale and questionId
+	 * 
+	 * @param surveyedLocaleId
+	 * @param questionId
+	 * @return
+	 */
+	
+	@SuppressWarnings("unchecked")
+	public List<SurveyalValue> listValuesByLocaleAndQuestion(Long surveyedLocaleId, Long questionId) {
+		PersistenceManager pm = PersistenceFilter.getManager();
+		javax.jdo.Query query = pm.newQuery(SurveyalValue.class);
+		StringBuilder filterString = new StringBuilder();
+		StringBuilder paramString = new StringBuilder();
+		Map<String, Object> paramMap = null;
+		paramMap = new HashMap<String, Object>();
+
+		appendNonNullParam("surveyedLocaleId", filterString, paramString, "String",
+				surveyedLocaleId, paramMap);
+		appendNonNullParam("surveyQuestionId", filterString, paramString, "String",
+				questionId, paramMap);		
+		query.setOrdering("collectionDate desc");
+		query.setFilter(filterString.toString());
+		query.declareParameters(paramString.toString());
+		List<SurveyalValue> results = (List<SurveyalValue>) query
+				.executeWithMap(paramMap);
+		return results;
+		
+	}
+
 	
 	/**
 	 * lists locales by projectId
@@ -353,5 +383,15 @@ public class SurveyedLocaleDao extends BaseDAO<SurveyedLocale> {
 					.getId());
 		}
 		return null;
+	}
+
+	/**
+	 * finds a single surveyedLocale by identifier. 
+	 * 
+	 * @param identifier
+	 * @return
+	 */
+	public SurveyedLocale getByIdentifier(String identifier) {
+		return findByProperty("identifier", identifier, "String");
 	}
 }

@@ -32,6 +32,15 @@
 	</filter-mapping>
 
 	<servlet>
+		<servlet-name>RecordDataServlet</servlet-name>
+		<servlet-class>org.waterforpeople.mapping.app.web.RecordDataServlet</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>RecordDataServlet</servlet-name>
+		<url-pattern>/recorddata</url-pattern>
+	</servlet-mapping>
+
+	<servlet>
 		<servlet-name>CurrentUserServlet</servlet-name>
 		<servlet-class>org.waterforpeople.mapping.app.web.CurrentUserServlet</servlet-class>
 	</servlet>

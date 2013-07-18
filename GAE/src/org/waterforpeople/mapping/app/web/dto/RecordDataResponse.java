@@ -30,6 +30,16 @@ public class RecordDataResponse extends RestResponse {
 	private static final long serialVersionUID = 1548249617327473969L;
 	private List<RecordDataDto> recordData;
 	private String cursor;
+	private Long recordCount;
+	private List<Long> dispQIds;
+
+	public List<Long> getDispQIds() {
+		return dispQIds;
+	}
+
+	public void setDispQIds(List<Long> dispQIds) {
+		this.dispQIds = dispQIds;
+	}
 
 	public String getCursor() {
 		return cursor;
@@ -45,5 +55,13 @@ public class RecordDataResponse extends RestResponse {
 
 	public void setRecordData(List<RecordDataDto> recordData) {
 		this.recordData = recordData;
+	}
+
+	public Long getRecordCount() {
+		return recordCount;
+	}
+
+	public void setRecordCount(Long recordCount) {
+		this.recordCount = recordCount;
 	}
 }

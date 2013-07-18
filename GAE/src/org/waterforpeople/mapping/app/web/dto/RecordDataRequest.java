@@ -35,7 +35,6 @@ public class RecordDataRequest extends RestRequest {
 	private static final String DEVICE_ID_PARAM = "deviceId";
 	private static final String CURSOR_PARAM = "cursor";
 	private static final String CHECK_AVAILABLE_PARAM = "checkAvailable";
-
 	
 	private Long projectId;
 	private Boolean checkAvailable;
@@ -44,9 +43,6 @@ public class RecordDataRequest extends RestRequest {
 	private String deviceId;
 	private String cursor;
 
-	
-
-	
 	@Override
 	protected void populateErrors() {
 		// TODO do a better job in error population

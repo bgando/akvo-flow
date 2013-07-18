@@ -21,7 +21,6 @@ import com.gallatinsystems.survey.device.dao.SurveyDbAdapter;
 import com.gallatinsystems.survey.device.domain.Survey;
 import com.gallatinsystems.survey.device.service.RecordDataService;
 import com.gallatinsystems.survey.device.util.ConstantUtil;
-import com.gallatinsystems.survey.device.util.ViewUtil;
 
 import android.app.Activity;
 import android.content.Intent;
@@ -57,7 +56,7 @@ public class DownloadRecordsActivity extends Activity {
 			if (message.arg1 == ConstantUtil.RECORDS_SERVER) {
 				totalRecordsOnServerField.setText(Integer
 						.toString(message.arg2));
-			} else if (message.arg1 == ConstantUtil.RECORDS_SERVER){
+			} else if (message.arg1 == ConstantUtil.RECORDS_DEVICE){
 				cachedOnPhoneField.setText(Integer
 						.toString(message.arg2));
 			}
@@ -104,9 +103,10 @@ public class DownloadRecordsActivity extends Activity {
 	private void populateFields() {
 
 		Survey surveyFromDb = databaseAdapter.findSurvey(surveyId);
-
 		surveyField.setText(surveyFromDb.getName());
-
+		
+		cachedOnPhoneField.setText(Integer.toString(databaseAdapter.countSurveyedLocale()));
+		
 		Intent intent = new Intent(this, RecordDataService.class);
 		Messenger messenger = new Messenger(handler);
 		intent.putExtra("MESSENGER", messenger);
@@ -126,7 +126,10 @@ public class DownloadRecordsActivity extends Activity {
 	}
 
 	public void deleteCachedRecords(View view) {
-		// TODO
+		databaseAdapter.deleteAllSurveyedLocale();
+		databaseAdapter.deleteAllSurveyalValue();
+		cachedOnPhoneField.setText(Integer
+				.toString(0));
 	}
 
 	public void onResume() {

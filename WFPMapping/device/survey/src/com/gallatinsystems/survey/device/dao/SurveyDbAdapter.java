@@ -1729,43 +1729,6 @@ public class SurveyDbAdapter {
 	}
 
 	/**
-	 * creates or updates a Surveyed Locale record based on the data passed in. The id is a UUID string.
-	 *
-	 * @param id
-	 * @param projectId
-	 * @param lastSDate
-	 * @param lat
-	 * @param lon
-	 * @return
-	 */
-	public long createOrUpdateSurveyedLocale(String id, int projectId, String lastSDate, Double lat, Double lon) {
-		ContentValues initialValues = new ContentValues();
-		initialValues.put(LOCALE_COL, id);
-		initialValues.put(PROJECT_COL, projectId);
-		initialValues.put(LAST_SUBMITTED_COL, lastSDate);
-		initialValues.put(LAT_COL, lat);
-		initialValues.put(LON_COL, lon);
-		initialValues.put(STATUS_COL, 0);
-
-		Cursor existingSL = findSurveyedLocaleByIdentifier(id);
-		Long slId = null;
-		if (existingSL != null && existingSL.moveToFirst()){
-			slId = (long) existingSL.getInt(existingSL.getColumnIndexOrThrow(PK_ID_COL));
-		}
-
-		if (slId == null) {
-			slId = database.insert(SURVEYED_LOCALE_TABLE, null, initialValues);
-		} else {
-			if (database.update(SURVEYED_LOCALE_TABLE, initialValues, PK_ID_COL + "=?",
-					new String[] { slId.toString() }) > 0) {
-			}
-		}
-		existingSL.close();
-		return slId;
-	}
-
-
-	/**
 	 * returns a cursor that lists all surveyed locales
 	 * used for testing
 	 * @return
@@ -1812,7 +1775,64 @@ public class SurveyDbAdapter {
 	public void deleteAllSurveyalValue(){
 		database.delete(SURVEYED_LOCALE_VAL_TABLE, null, null);
 	}
+	
+	/**
+	 * deletes all existing surveyedLocales in the database
+	 * @return
+	 */
+	public void deleteAllSurveyedLocale(){
+		database.delete(SURVEYED_LOCALE_TABLE, null, null);
+	}
 
+	public int countSurveyedLocale() {
+		int i = 0;
+		Cursor cursor = database.rawQuery("SELECT COUNT(*) as theCount FROM surveyed_locale",
+				null);
+		if (cursor != null) {
+			if (cursor.moveToFirst()) {
+				i = cursor.getInt(0);
+			}
+			cursor.close();
+		}
+		return i;
+	}
+	
+	/**
+	 * creates or updates a Surveyed Locale record based on the data passed in. The id is a UUID string.
+	 *
+	 * @param id
+	 * @param projectId
+	 * @param lastSDate
+	 * @param lat
+	 * @param lon
+	 * @return
+	 */
+	public long createOrUpdateSurveyedLocale(String id, int projectId, String lastSDate, Double lat, Double lon) {
+		ContentValues initialValues = new ContentValues();
+		initialValues.put(LOCALE_COL, id);
+		initialValues.put(PROJECT_COL, projectId);
+		initialValues.put(LAST_SUBMITTED_COL, lastSDate);
+		initialValues.put(LAT_COL, lat);
+		initialValues.put(LON_COL, lon);
+		initialValues.put(STATUS_COL, 0);
+
+		Cursor existingSL = findSurveyedLocaleByIdentifier(id);
+		Long slId = null;
+		if (existingSL != null && existingSL.moveToFirst()){
+			slId = (long) existingSL.getInt(existingSL.getColumnIndexOrThrow(PK_ID_COL));
+		}
+
+		if (slId == null) {
+			slId = database.insert(SURVEYED_LOCALE_TABLE, null, initialValues);
+		} else {
+			if (database.update(SURVEYED_LOCALE_TABLE, initialValues, PK_ID_COL + "=?",
+					new String[] { slId.toString() }) > 0) {
+			}
+		}
+		existingSL.close();
+		return slId;
+	}
+	
 	/**
 	 * deletes all existing surveyalValues for the surveyed locale id passed in
 	 * and then recreates them based on the arrays passed in.

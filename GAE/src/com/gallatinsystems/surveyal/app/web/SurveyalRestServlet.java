@@ -236,7 +236,7 @@ public class SurveyalRestServlet extends AbstractRestApiServlet {
 	 * unlikely to run in under 1 minute (based on datastore latency) so it is
 	 * best invoked via a task queue
 	 * 
-	 * @param surveyInstanceId
+	 * @param instance
 	 */
 	private void ingestSurveyInstance(SurveyInstance instance) {
 
@@ -259,77 +259,69 @@ public class SurveyalRestServlet extends AbstractRestApiServlet {
 					}
 				}
 			}
-
+			// if the surveyed locale id was available in the ingested data,
+			// this has been set in the save method in surveyInstanceDao.
+			// the surveyedLocaleId field is a UUID string used as identifier
 			if (instance.getSurveyedLocaleId() != null) {
 				locale = surveyedLocaleDao.getByKey(instance
 						.getSurveyedLocaleId());
 			}
-			GeoPlace geoPlace = null;
 
-			// only create a "locale" if we have a valid geographic question
-			if (geoQ != null && geoQ.getValue() != null && geoQ.getValue().length() > 0) {
-				double lat = UNSET_VAL;
-				double lon = UNSET_VAL;
-				boolean ambiguousFlag = false;
-				String code = null;
+			// try to construct geoPlace
+			GeoPlace geoPlace = null;
+			double lat = UNSET_VAL;
+			double lon = UNSET_VAL;
+			if (geoQ != null && geoQ.getValue() != null
+					&& geoQ.getValue().length() > 0) {
 				String[] tokens = geoQ.getValue().split("\\|");
 				if (tokens.length >= 2) {
-					lat = Double.parseDouble(tokens[0]);
-					lon = Double.parseDouble(tokens[1]);
-					if (tokens.length >= 4) {
-						code = tokens[tokens.length - 1];
+					try {
+						lat = Double.parseDouble(tokens[0]);
+						lon = Double.parseDouble(tokens[1]);
+					} catch (NumberFormatException nfe) {
+						log.log(Level.SEVERE,
+								"Could not parse lat/lon from Geo Question "
+										+ geoQ.getQuestionID());
 					}
 				}
-				if (code == null) {
-					Long codeNum = Long
-							.parseLong((int) ((Math.abs(lat) * 10000d)) + ""
-									+ (int) ((Math.abs(lon) * 10000d)));
-					code = Long.toString(codeNum, 36);
-				}
-				if (lat == UNSET_VAL || lon == UNSET_VAL) {
-					throw new RuntimeException(
-							"Could not parse lat/lon from Geo Question "
-									+ geoQ.getQuestionID());
-				} else if (mergeNearby && locale == null) {
-					// if we have a geo question but no locale id, see if we can
-					// find one based on lat/lon
-					List<SurveyedLocale> candidates = surveyedLocaleDao
-							.listLocalesByCoordinates(pointType, lat, lon,
-									TOLERANCE);
-					if (candidates != null && candidates.size() == 1) {
-						locale = candidates.get(0);
-					} else if (candidates != null && candidates.size() > 1) {
-						log.log(Level.WARNING,
-								"Geo based lookup of surveyed locale returned more than one candidate so we are creating a new one");
-						ambiguousFlag = true;
-					}
-				}
-				geoPlace = getGeoPlace(lat, lon);
-				if (locale == null) {
-					locale = new SurveyedLocale();
-					locale.setAmbiguous(ambiguousFlag);
-					locale.setLatitude(lat);
-					locale.setLongitude(lon);
-					setGeoData(geoPlace, locale);
-					if (survey != null) {
-						locale.setLocaleType(survey.getPointType());
-					}
-					locale.setIdentifier(code);
-					// TODO: for multi-org instances, set org on Survey and pull
-					// from there
-					if (locale.getOrganization() == null) {
-						locale.setOrganization(PropertyUtil
-								.getProperty(DEFAULT_ORG_PROP));
-					}
-					locale = surveyedLocaleDao.save(locale);
-				} else {
-					if (survey.getPointType() != null
-							&& !survey.getPointType().equals(
-									locale.getLocaleType())) {
-						locale.setLocaleType(survey.getPointType());
-					}
+
+				if (lat != UNSET_VAL && lon != UNSET_VAL) {
+					geoPlace = getGeoPlace(lat, lon);
 				}
 			}
+
+			if (locale == null) {
+				locale = new SurveyedLocale();
+				// locale.setAmbiguous(ambiguousFlag);
+				if (lat != UNSET_VAL && lon != UNSET_VAL) {
+					locale.setLatitude(lat);
+					locale.setLongitude(lon);
+				}
+				// we add the project Id here
+				locale.setProjectId(survey.getProjectId());
+
+				if (geoPlace != null) {
+					setGeoData(geoPlace, locale);
+				}
+				if (survey != null) {
+					locale.setLocaleType(survey.getPointType());
+				}
+				// on a new Locale, use the UUID of the instance as the identifier
+				locale.setIdentifier(instance.getUuid());
+
+				if (locale.getOrganization() == null) {
+					locale.setOrganization(PropertyUtil
+							.getProperty(DEFAULT_ORG_PROP));
+				}
+				locale = surveyedLocaleDao.save(locale);
+			} else {
+				if (survey.getPointType() != null
+						&& !survey.getPointType()
+								.equals(locale.getLocaleType())) {
+					locale.setLocaleType(survey.getPointType());
+				}
+			}
+
 			if (instance != null && geoPlace != null) {
 				instance.setCountryCode(geoPlace.getCountryCode());
 				instance.setSublevel1(geoPlace.getSub1());
@@ -345,11 +337,13 @@ public class SurveyalRestServlet extends AbstractRestApiServlet {
 				locale.setLastSurveyalInstanceId(instance.getKey().getId());
 				// increment surveyedLocaleSummary count for this surveyId
 				SurveyedLocaleSummaryDao SLSdao = new SurveyedLocaleSummaryDao();
-				SurveyedLocaleSummary SLSummary = SLSdao.getBySurveyId(instance.getSurveyId());
+				SurveyedLocaleSummary SLSummary = SLSdao
+						.getByProjectId(survey.getProjectId());
 				if (SLSummary != null && SLSummary.getKey() != null) {
 					SLSummary.setCount(SLSummary.getCount() + 1);
 				} else {
 					SLSummary = new SurveyedLocaleSummary();
+					SLSummary.setProjectId(survey.getProjectId());
 					SLSummary.setCount(1L);
 				}
 				SLSdao.save(SLSummary);

@@ -32,6 +32,7 @@ import android.database.Cursor;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.graphics.PointF;
 import android.location.Location;
 import android.util.Log;
 
@@ -42,6 +43,7 @@ import com.gallatinsystems.survey.device.domain.Survey;
 import com.gallatinsystems.survey.device.domain.SurveyedLocale;
 import com.gallatinsystems.survey.device.domain.SurveyedLocaleValue;
 import com.gallatinsystems.survey.device.util.ConstantUtil;
+import com.gallatinsystems.survey.device.util.GeoUtil;
 import com.gallatinsystems.survey.device.util.PropertyUtil;
 
 /**
@@ -160,7 +162,8 @@ public class SurveyDbAdapter {
 			"insert into preferences values('survey.checkforupdates','0')",
 			"insert into preferences values('remoteexception.upload','0')",
 			"insert into preferences values('survey.media.photo.shrink','true')",		
-			"insert into preferences values('survey.media.photo.sizereminder','true')" };
+			"insert into preferences values('survey.media.photo.sizereminder','true')",
+			"insert into preferences values('nearby.locale.radius','100000.0')" };
 
 	private static final String DATABASE_NAME = "surveydata";
 	private static final String SURVEY_TABLE = "survey";
@@ -1943,5 +1946,141 @@ public class SurveyDbAdapter {
 				database.insert(RECORD_META_TABLE, null, initialValues);
 			}
 		}
+	}
+
+	/**
+	 * Filters surveyd locales based on the parameters passed in.
+	 * @param projectId
+	 * @param latitude
+	 * @param longitude
+	 * @param filterString
+	 * @param nearbyRadius
+	 * @return
+	 */
+	public Cursor listFilteredSurveyedLocales(String projectId, Double latitude,
+			Double longitude, String filterString, Double nearbyRadius) {
+		List<String> whereValuesList = new ArrayList<String>();
+		String queryString = "SELECT sl.* FROM " + SURVEYED_LOCALE_TABLE + " AS sl";
+		String whereClause = " WHERE sl." + PROJECT_COL + " =?";
+		whereValuesList.add(projectId);
+
+		if (filterString != null && filterString.length() > 0){
+			queryString += " INNER JOIN " + SURVEYED_LOCALE_VAL_TABLE + " AS slv ON sl." + PK_ID_COL + "=slv." + SURVEYED_LOCALE_COL;
+			whereClause += " AND slv." + ANSWER_COL + " LIKE ?";
+			whereValuesList.add(filterString+"%");
+		}
+
+		// location part
+		if (latitude != null && longitude != null){
+			PointF center = new PointF(latitude.floatValue(), longitude.floatValue());
+			PointF p1 = GeoUtil.calculateDerivedPosition(center, nearbyRadius, 0);
+			PointF p2 = GeoUtil.calculateDerivedPosition(center, nearbyRadius, 90);
+			PointF p3 = GeoUtil.calculateDerivedPosition(center, nearbyRadius, 180);
+			PointF p4 = GeoUtil.calculateDerivedPosition(center, nearbyRadius, 270);
+
+			whereClause += " AND sl." + LAT_COL + " >? AND sl." + LAT_COL + " <? AND sl."
+			        + LON_COL + " <? AND sl." + LON_COL + " >?";
+			whereValuesList.add(String.valueOf(p3.x));
+			whereValuesList.add(String.valueOf(p1.x));
+			whereValuesList.add(String.valueOf(p2.y));
+			whereValuesList.add(String.valueOf(p4.y));
+
+			// this is to correct the distance for the shortening at higher latitudes
+			Double fudge = Math.pow(Math.cos(Math.toRadians(latitude)),2);
+
+			// this uses a simple planar approximation of distance. this should be good enough for our purpose.
+			String orderByTempl = " ORDER BY ((%s -" + LAT_COL + ") * (%s - " + LAT_COL + ") + (%s - " + LON_COL + ") * (%s - " + LON_COL + ") * %s)";
+			whereClause += String.format(orderByTempl, latitude, latitude, longitude, longitude, fudge);
+		}
+
+		String[] whereValues = (String[]) whereValuesList.toArray(new String[0]);
+		Cursor cursor = database.rawQuery(queryString + whereClause, whereValues);
+
+		if (cursor != null) {
+			cursor.moveToFirst();
+		}
+		return cursor;
+	}
+
+	public ArrayList<SurveyedLocale> listSurveyedLocalesByCursor(Cursor slCursor, int skip, int number, Double lat, Double lon) {
+		ArrayList<SurveyedLocale> slList = new ArrayList<SurveyedLocale>();
+		if (slCursor != null && slCursor.moveToFirst()){
+			int j = slCursor.getCount();
+			if (slCursor.getCount() > skip){
+				slCursor.moveToPosition(skip);
+			}
+			int i = 0;
+			do {
+				try{
+					SurveyedLocale sl = new SurveyedLocale();
+					sl.setId(slCursor.getLong(slCursor
+						.getColumnIndexOrThrow(PK_ID_COL)));
+					sl.setProjectId(slCursor.getString(slCursor
+						.getColumnIndexOrThrow(PROJECT_COL)));
+					sl.setLatitude(slCursor.getDouble(slCursor
+						.getColumnIndexOrThrow(LAT_COL)));
+					sl.setLongitude(slCursor.getDouble(slCursor
+						.getColumnIndexOrThrow(LON_COL)));
+					sl.setLocaleUUID(slCursor.getString(slCursor
+						.getColumnIndexOrThrow(LOCALE_UUID_COL)));
+					sl.setLastSubmittedDate(slCursor.getString(slCursor
+						.getColumnIndexOrThrow(LAST_SUBMITTED_COL)));
+					sl.setStatus(slCursor.getInt(slCursor
+						.getColumnIndexOrThrow(STATUS_COL)));
+
+					if (lat != null && lon != null && sl.getLatitude() != null && sl.getLongitude() != null){
+						float[] distance = new float[1];
+						Location.distanceBetween(lat,lon, sl.getLatitude(), sl.getLongitude(), distance);
+						sl.setDistance(Double.valueOf(distance[0]));
+					}
+
+					// add metric fields for display in lists
+					List<String> metricNames = new ArrayList<String>();
+					List<String> metricValues = new ArrayList<String>();
+					List<SurveyedLocaleValue> slvList = listSurveyedLocaleValuesByLocaleId(sl.getId());
+					for (SurveyedLocaleValue slv : slvList){
+						if (getIncludeInListByQuestionId(slv.getQuestionId())){
+							metricNames.add(getMetricNameByQuestionId(slv.getQuestionId()));
+							metricValues.add(slv.getAnswerValue());
+						}
+					}
+					sl.setMetricNames(metricNames);
+					sl.setMetricValues(metricValues);
+					slList.add(sl);
+				} catch (IllegalArgumentException e) {
+					// let it pass
+				}
+			} while (i < number && slCursor.moveToNext());
+		}
+		return slList;
+	}
+
+	public String getMetricNameByQuestionId(String questionId) {
+		Cursor cursor = database.query(RECORD_META_TABLE, new String[] { PK_ID_COL,
+				QUESTION_COL, METRIC_NAME_COL }, QUESTION_COL + "=?",
+				new String[] { questionId }, null, null, null);
+		if (cursor != null && cursor.moveToFirst()) {
+			try{
+				return cursor.getString(cursor.getColumnIndexOrThrow(METRIC_NAME_COL));
+			} catch (IllegalArgumentException e) {
+				return "";
+			}
+		}
+		return "";
+	}
+
+	public boolean getIncludeInListByQuestionId(String questionId) {
+		Cursor cursor = database.query(RECORD_META_TABLE, new String[] { PK_ID_COL,
+				QUESTION_COL, INCLUDE_IN_LIST_COL }, QUESTION_COL + "=?",
+				new String[] { questionId }, null, null, null);
+		if (cursor != null && cursor.moveToFirst()) {
+			try{
+				int answ = cursor.getInt(cursor.getColumnIndexOrThrow(INCLUDE_IN_LIST_COL));
+				return answ > 0;
+			} catch (IllegalArgumentException e) {
+				return false;
+			}
+		}
+		return false;
 	}
 }

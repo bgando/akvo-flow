@@ -45,6 +45,7 @@
 		<activity android:name=".activity.PointOfInterestMapActivity"/>
 		<activity android:name=".activity.TransmissionHistoryActivity"/>
 		<activity android:name=".activity.FilterLocaleActivity"/>
+		<activity android:name=".activity.NearbyLocaleDetailActivity"/>
 
 		<service android:name=".service.DataSyncService" />
 		<service android:name=".service.SurveyDownloadService" />

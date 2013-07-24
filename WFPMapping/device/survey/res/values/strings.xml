@@ -222,5 +222,7 @@
 	<string name="downloadrecords">Download records</string>
 	<string name="totalonserver">Total on server</string>
 	<string name="cachedonphone">Cached on phone</string>	
+	<string name="showonmap">Show on map</string>
+	<string name="updatethisrecord">Update this record</string>
 	
 </resources>

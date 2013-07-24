@@ -2185,13 +2185,18 @@ nav.smallMenu ul li a.showQuestion:hover { background: url(../images/showQuestio
 	display: block;
 	margin: 1em auto;
 	width: 98%;
-	border-top: 1px solid rgb(228, 228, 228);
-	border-bottom: 1px solid rgb(255, 255, 255);
+/*	border-top: 1px solid rgb(228, 228, 228);
+	border-bottom: 1px solid rgb(255, 255, 255);*/
 	content: "";
 }
 .innerContent .minValNumb, .innerContent .maxValNumb { width: 48%; }
 .innerContent .minValNumb { float: left; }
 .innerContent .maxValNumb { float: right; }
+
+.innerContent .propNamel, .innerContent .propNamer { width: 24%; }
+.innerContent .propNamel { float: left; }
+.innerContent .propNamer { float: left; }
+
 .innerContent .selectinLabel a.addAttribute {
 	display: block;
 	margin: 0.2em 0 0 0.2em;

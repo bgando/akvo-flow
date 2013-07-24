@@ -137,14 +137,15 @@ public class SurveyOverviewActivity extends Activity {
 	}
 
 	public void showSurveyList(View view) {
-		// TODO
+		Survey survey = databaseAdapter.findSurvey(surveyId);
+		Intent i = new Intent(view.getContext(), SurveyOverviewListActivity.class);
+		i.putExtra(ConstantUtil.SURVEY_ID_KEY, survey.getId());
+		startActivity(i);
 	}
 
 	public void downloadData(View view) {
 		Survey survey = databaseAdapter.findSurvey(surveyId);
-
 		if (survey != null) {
-
 			 Intent i = new Intent(view.getContext(), DownloadRecordsActivity.class);
 			 i.putExtra(ConstantUtil.USER_ID_KEY, userId);
 			 i.putExtra(ConstantUtil.SURVEY_ID_KEY, survey.getId());

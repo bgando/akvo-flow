@@ -40,7 +40,7 @@
         android:layout_height="wrap_content"
         android:layout_marginBottom="30px"
         android:layout_marginTop="30px"
-        android:orientation="vertical" >
+        android:orientation="horizontal" >
 
         <Button
             android:id="@+id/startNewRecord"
@@ -53,7 +53,7 @@
             android:id="@+id/updateExistingRecord"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Update existing record" 
+            android:text="Find existing record" 
             android:onClick="updateExistingRecord"/>
     </LinearLayout>
 

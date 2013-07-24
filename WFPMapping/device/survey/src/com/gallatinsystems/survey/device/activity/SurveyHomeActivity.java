@@ -123,7 +123,7 @@ public class SurveyHomeActivity extends Activity implements OnItemClickListener 
 		startService(LocationService.class);
 		startService(PrecacheService.class);
 		startService(BootstrapService.class);
-		startService(ApkUpdateService.class);
+		//startService(ApkUpdateService.class);
 		startService(ExceptionReportingService.class);
 	}
 

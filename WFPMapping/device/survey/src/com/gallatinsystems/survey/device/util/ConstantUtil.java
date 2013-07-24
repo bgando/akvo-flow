@@ -62,6 +62,7 @@ public class ConstantUtil {
 	 * size limits
 	 */
 	public static final long BIG_PHOTO_FILE = 100000; //Bytes
+	public static final double DEFAULT_MAX_DISTANCE = 100000d; //meter
 	public static final String SPACE_WARNING_MB_LEVELS = "100, 50, 25, 10, 5, 1";
 
 	
@@ -180,6 +181,7 @@ public class ConstantUtil {
 	public static final String SURVEY_RESOURCE_ID_KEY = "RESID";
 	public static final String USER_ID_KEY = "UID";
 	public static final String SURVEY_ID_KEY = "SID";
+	public static final String PROJECT_ID_KEY = "PID";
 	public static final String ID_KEY = "_id";
 	public static final String DISPLAY_NAME_KEY = "display_name";
 	public static final String DELETED_SAVED_USER = "deletedSavedUser";
@@ -196,6 +198,7 @@ public class ConstantUtil {
 	public static final String POINTS_KEY = "points";
 	public static final String QUESTION_ID_KEY = "questionId";
 	public static final String QUESTION_TYPE_KEY = "questionType";
+	public static final String SL_KEY = "surveyed-locale";
 
 	/**
 	 * settings keys
@@ -217,6 +220,7 @@ public class ConstantUtil {
 	public static final String CHECK_FOR_SURVEYS = "survey.checkforupdates";
 	public static final String UPLOAD_ERRORS = "remoteexception.upload";
 	public static final String NEARBY_RADIUS = "nearby.points.radius";
+	public static final String NEARBY_LOCALE_RADIUS = "nearby.locale.radius";
 	public static final String PHOTO_SIZE_REMINDER_KEY = "survey.media.photo.sizereminder";
 	public static final String SHRINK_PHOTOS_KEY = "survey.media.photo.shrink";
 	

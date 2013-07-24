@@ -34,6 +34,7 @@ public class Metric extends BaseDomain {
 	private String name;
 	private String group;
 	private String valueType;
+	private Long projectId;
 
 	public String getValueType() {
 		return valueType;
@@ -67,4 +68,11 @@ public class Metric extends BaseDomain {
 		this.group = group;
 	}
 
+	public Long getProjectId() {
+		return projectId;
+	}
+
+	public void setProjectId(Long projectId) {
+		this.projectId = projectId;
+	}
 }

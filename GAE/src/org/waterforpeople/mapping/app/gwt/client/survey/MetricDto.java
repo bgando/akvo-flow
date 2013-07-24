@@ -30,9 +30,8 @@ public class MetricDto extends BaseDto {
 	private String name;
 	private String group;
 	private String valueType;
+	private Long projectId;
 	
-	
-
 	public String getValueType() {
 		return valueType;
 	}
@@ -65,4 +64,11 @@ public class MetricDto extends BaseDto {
 		this.group = group;
 	}
 
+	public Long getProjectId() {
+		return projectId;
+	}
+
+	public void setProjectId(Long projectId) {
+		this.projectId = projectId;
+	}
 }

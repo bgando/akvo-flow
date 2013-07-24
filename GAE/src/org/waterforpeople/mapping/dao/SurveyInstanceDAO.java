@@ -187,6 +187,7 @@ public class SurveyInstanceDAO extends BaseDAO<SurveyInstance> {
 					si.setSurveyedLocaleId(sl.getKey().getId());
 					si = save(si);
 				}
+				continue;
 			}
 
 			qas.setSurveyId(si.getSurveyId());

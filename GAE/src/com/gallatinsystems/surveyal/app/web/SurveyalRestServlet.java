@@ -239,7 +239,6 @@ public class SurveyalRestServlet extends AbstractRestApiServlet {
 	 * @param instance
 	 */
 	private void ingestSurveyInstance(SurveyInstance instance) {
-
 		SurveyedLocale locale = null;
 		if (instance != null) {
 			List<QuestionAnswerStore> answers = surveyInstanceDao
@@ -262,9 +261,13 @@ public class SurveyalRestServlet extends AbstractRestApiServlet {
 			// if the surveyed locale id was available in the ingested data,
 			// this has been set in the save method in surveyInstanceDao.
 			// the surveyedLocaleId field is a UUID string used as identifier
+			boolean useExistingLocale = false;
 			if (instance.getSurveyedLocaleId() != null) {
 				locale = surveyedLocaleDao.getByKey(instance
 						.getSurveyedLocaleId());
+				if (locale != null) {
+					useExistingLocale = true;
+				}
 			}
 
 			// try to construct geoPlace
@@ -335,18 +338,22 @@ public class SurveyalRestServlet extends AbstractRestApiServlet {
 			if (locale != null && locale.getKey() != null && answers != null) {
 				locale.setLastSurveyedDate(instance.getCollectionDate());
 				locale.setLastSurveyalInstanceId(instance.getKey().getId());
-				// increment surveyedLocaleSummary count for this surveyId
-				SurveyedLocaleSummaryDao SLSdao = new SurveyedLocaleSummaryDao();
-				SurveyedLocaleSummary SLSummary = SLSdao
+
+				// increment surveyedLocaleSummary count for this surveyId if we have
+				// created a new one
+				if (!useExistingLocale){
+					SurveyedLocaleSummaryDao SLSdao = new SurveyedLocaleSummaryDao();
+					SurveyedLocaleSummary SLSummary = SLSdao
 						.getByProjectId(survey.getProjectId());
-				if (SLSummary != null && SLSummary.getKey() != null) {
-					SLSummary.setCount(SLSummary.getCount() + 1);
-				} else {
-					SLSummary = new SurveyedLocaleSummary();
-					SLSummary.setProjectId(survey.getProjectId());
-					SLSummary.setCount(1L);
+					if (SLSummary != null && SLSummary.getKey() != null) {
+						SLSummary.setCount(SLSummary.getCount() + 1);
+					} else {
+						SLSummary = new SurveyedLocaleSummary();
+						SLSummary.setProjectId(survey.getProjectId());
+						SLSummary.setCount(1L);
+					}
+					SLSdao.save(SLSummary);
 				}
-				SLSdao.save(SLSummary);
 
 				instance.setSurveyedLocaleId(locale.getKey().getId());
 				List<SurveyalValue> values = constructValues(locale, answers);

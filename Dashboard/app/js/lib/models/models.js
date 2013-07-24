@@ -88,6 +88,7 @@ FLOW.QuestionGroup = FLOW.BaseModel.extend({
 
 
 FLOW.Question = FLOW.BaseModel.extend({
+  metrics: DS.hasMany('FLOW.Metric'),
   allowDecimal: DS.attr('boolean', {
     defaultValue: false
   }),
@@ -104,6 +105,9 @@ FLOW.Question = FLOW.BaseModel.extend({
     defaultValue: false
   }),
   immutable: DS.attr('boolean', {
+    defaultValue: false
+  }),
+  includeInList: DS.attr('boolean', {
     defaultValue: false
   }),
   isName: DS.attr('boolean', {
@@ -129,6 +133,7 @@ FLOW.Question = FLOW.BaseModel.extend({
   questionGroupId: DS.attr('number'),
   surveyId: DS.attr('number'),
   metricId: DS.attr('number'),
+  newMetricName: DS.attr('string'),
   text: DS.attr('string'),
   tip: DS.attr('string'),
   type: DS.attr('string', {
@@ -286,6 +291,7 @@ FLOW.Metric = FLOW.BaseModel.extend({
   name: DS.attr('string'),
   group: DS.attr('string'),
   valueType: DS.attr('string')
+  //projectId: DS.attr('number')
 });
 
 FLOW.Message = FLOW.BaseModel.extend({

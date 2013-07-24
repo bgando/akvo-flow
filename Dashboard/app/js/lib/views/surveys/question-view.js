@@ -18,6 +18,7 @@ if (!Array.prototype.indexOf) {
 FLOW.QuestionView = FLOW.View.extend({
 	templateName: 'navSurveys/question-view',
 	content: null,
+	attribute: null,
 	text: null,
 	tip: null,
 	type: null,
@@ -32,10 +33,13 @@ FLOW.QuestionView = FLOW.View.extend({
 	dependentQuestion: null,
 	optionList: null,
 	includeInMap: null,
+	includeInList: false,
 	showAddAttributeDialogBool: false,
 	newAttributeName: null,
 	newAttributeGroup: null,
 	newAttributeType: null,
+	propertyName: null,
+	propAlreadyExists: false,
 
 	amOpenQuestion: function() {
 		var selected = FLOW.selectedControl.get('selectedQuestion');
@@ -72,8 +76,32 @@ FLOW.QuestionView = FLOW.View.extend({
 		}
 	}.property('this.type').cacheable(),
 
-	// TODO dependencies
-	// TODO options
+
+	hasProperty: function () {
+		return !Ember.none(this.get('attribute')) || !Ember.empty(this.get('propertyName'))
+	}.property('attribute','propertyName'),
+
+	checkPropAlreadyExists: function () {
+		var metrics, currentPropName;
+		if (!Ember.empty(this.get('propertyName'))) {
+			this.set('attribute',null);
+		}
+		this.set('propAlreadyExists',false);
+		currentPropName = this.get('propertyName');
+		metrics = FLOW.store.filter(FLOW.Metric, function(item){
+			return currentPropName == item.get('name');
+		});
+		if (!Ember.none(metrics) && metrics.content.length > 0){
+			this.set('propAlreadyExists',true);
+		}
+	}.observes('propertyName'),
+
+	clearNewPropField: function () {
+		if (!Ember.none(this.get('attribute'))){
+			this.set('propertyName',null);
+		}
+	}.observes('attribute'),
+
 	doQuestionEdit: function() {
 		var questionType = null,
 			attribute = null,
@@ -90,6 +118,7 @@ FLOW.QuestionView = FLOW.View.extend({
 		this.set('allowMultipleFlag', FLOW.selectedControl.selectedQuestion.get('allowMultipleFlag'));
 		this.set('allowOtherFlag', FLOW.selectedControl.selectedQuestion.get('allowOtherFlag'));
 		this.set('includeInMap', FLOW.selectedControl.selectedQuestion.get('includeInMap'));
+		this.set('includeInList', FLOW.selectedControl.selectedQuestion.get('includeInList'));
 		this.set('dependentFlag', FLOW.selectedControl.selectedQuestion.get('dependentFlag'));
 		this.set('optionList', FLOW.selectedControl.selectedQuestion.get('optionList'));
 		FLOW.optionListControl.set('content',[]);
@@ -200,6 +229,8 @@ FLOW.QuestionView = FLOW.View.extend({
 		FLOW.selectedControl.selectedQuestion.set('allowMultipleFlag', this.get('allowMultipleFlag'));
 		FLOW.selectedControl.selectedQuestion.set('allowOtherFlag', this.get('allowOtherFlag'));
 		FLOW.selectedControl.selectedQuestion.set('includeInMap', this.get('includeInMap'));
+		FLOW.selectedControl.selectedQuestion.set('includeInList', this.get('includeInList'));
+		FLOW.selectedControl.selectedQuestion.set('newMetricName', this.get('propertyName'));
 
 		dependentQuestionAnswer = "";
 		first = true;

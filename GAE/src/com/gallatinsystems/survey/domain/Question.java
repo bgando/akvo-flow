@@ -50,6 +50,7 @@ public class Question extends BaseDomain {
 	private Boolean allowMultipleFlag = null;
 	private Boolean allowOtherFlag = null;
 	private Boolean collapseable = false;
+	private Boolean includeInList = false;
 	private Boolean immutable = false;
 	private Long dependentQuestionId;
 	private String dependentQuestionAnswer;
@@ -322,5 +323,13 @@ public class Question extends BaseDomain {
 
 	public Boolean getImmutable() {
 		return immutable;
+	}
+
+	public Boolean getIncludeInList() {
+		return includeInList;
+	}
+
+	public void setIncludeInList(Boolean includeInList) {
+		this.includeInList = includeInList;
 	}
 }

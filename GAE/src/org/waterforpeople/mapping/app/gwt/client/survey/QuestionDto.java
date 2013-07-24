@@ -35,7 +35,9 @@ public class QuestionDto extends BaseDto implements NamedObject {
 	private QuestionType type;
 	private OptionContainerDto optionContainerDto = null;
 	private List<QuestionHelpDto> questionHelpList;
+	private List<Long> metrics = null;
 	private String tip = null;
+	private Boolean includeInList = null;
 	private String optionList = null;
 	private Boolean mandatoryFlag = null;
 	private Boolean dependentFlag = null;
@@ -57,6 +59,7 @@ public class QuestionDto extends BaseDto implements NamedObject {
 	private Double minVal;
 	private Double maxVal;
 	private Boolean isName;
+	private String newMetricName;
 
 	
 	public Boolean getAllowDecimal() {
@@ -350,5 +353,29 @@ public class QuestionDto extends BaseDto implements NamedObject {
 
 	public Boolean getImmutable() {
 		return immutable;
+	}
+
+	public String getNewMetricName() {
+		return newMetricName;
+	}
+
+	public void setNewMetricName(String newMetricName) {
+		this.newMetricName = newMetricName;
+	}
+
+	public List<Long> getMetrics() {
+		return metrics;
+	}
+
+	public void setMetrics(List<Long> metrics) {
+		this.metrics = metrics;
+	}
+
+	public Boolean getIncludeInList() {
+		return includeInList;
+	}
+
+	public void setIncludeInList(Boolean includeInList) {
+		this.includeInList = includeInList;
 	}
 }

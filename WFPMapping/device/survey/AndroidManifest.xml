@@ -44,6 +44,7 @@
 		<activity android:name=".activity.WaterflowCalculatorActivity"/>
 		<activity android:name=".activity.PointOfInterestMapActivity"/>
 		<activity android:name=".activity.TransmissionHistoryActivity"/>
+		<activity android:name=".activity.FilterLocaleActivity"/>
 
 		<service android:name=".service.DataSyncService" />
 		<service android:name=".service.SurveyDownloadService" />

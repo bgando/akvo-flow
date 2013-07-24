@@ -105,9 +105,9 @@
 	<string name="toosmallerr">Value is too small. Minimum value: </string>
 	<string name="toolargeerr">Value is too large. Maximum value: </string>
 	<string name="baddatatypeerr">Answer must be numeric</string>
-	<string name="nothingnearby">No nearby access points</string>
-	<string name="nearbyinstructions">Click on an access point to see details. Press back to return to main menu.</string>
-	<string name="pointname">Point Name: </string>
+	<string name="nothingnearby">No search results</string>
+	<string name="nearbyinstructions">Click on an item to see details.</string>
+	<string name="pointname">Id: </string>
 	<string name="distance">Distance: </string>
 	<string name="pointtypelabel">Point Type:</string>
 	<string name="nearbylabel">Nearby Access Points</string>
@@ -176,7 +176,8 @@
 	<string name="authtext">Please enter the administrator passcode: </string>	
 	<string name="authfailed">Authorization Failed</string>
 	<string name="invalidpassword">Invalid passcode</string>
-	<string name="searchpoints">Search Points</string>	
+	<string name="searchpoints">Search Points</string>
+	<string name="searchname">Search (at least 3 characters)</string>
 	<string name="pointtype">Point Type</string>
 	<string name="clearquestion">Clear Response</string>
 	<string name="clearquestiondesc">Do you want to clear the response to this question?</string>

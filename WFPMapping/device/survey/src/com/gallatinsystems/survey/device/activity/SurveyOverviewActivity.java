@@ -37,15 +37,15 @@ import android.widget.AdapterView;
 import android.widget.TextView;
 
 /**
- * Activity to list all "nearby" data records
+ * Activity to select survey-specific actions
  * 
  * @author Mark Tiele Westra
  */
 public class SurveyOverviewActivity extends Activity {
 
 	public static final int SURVEY_ACTIVITY = 1;
+	public static final int SELECT_LOCALE_ACTIVITY = 2;
 	public static final int DOWNLOAD_RECORDS_ACTIVITY = 10;
-	private static final int RESULT_OK = 1;
 	private static final String TAG = "Survey Home Activity";
 
 	private TextView surveyField;
@@ -87,7 +87,6 @@ public class SurveyOverviewActivity extends Activity {
 			surveyId = savedInstanceState != null ? savedInstanceState
 					.getString(ConstantUtil.SURVEY_ID_KEY) : "1";
 		}
-
 		populateFields();
 	}
 
@@ -122,14 +121,26 @@ public class SurveyOverviewActivity extends Activity {
 			i.putExtra(ConstantUtil.USER_ID_KEY, userId);
 			i.putExtra(ConstantUtil.SURVEY_ID_KEY, survey.getId());
 			startActivityForResult(i, SURVEY_ACTIVITY);
-
 		} else {
 			Log.e(TAG, "Survey for selection is null");
 		}
 	}
 
 	public void updateExistingRecord(View view) {
-		// TODO
+		Survey survey = databaseAdapter.findSurvey(surveyId);
+
+		if (survey != null) {
+			Intent i = new Intent(view.getContext(), FilterLocaleActivity.class);
+			i.putExtra(ConstantUtil.USER_ID_KEY, userId);
+			i.putExtra(ConstantUtil.SURVEY_ID_KEY, survey.getId());
+
+			// FIXME for now, the project id is the same as the surveyId
+			i.putExtra(ConstantUtil.PROJECT_ID_KEY, survey.getId());
+			startActivityForResult(i, SELECT_LOCALE_ACTIVITY);
+
+		} else {
+			Log.e(TAG, "Survey for selection is null");
+		}
 	}
 
 	public void uploadData(View view) {
@@ -158,8 +169,7 @@ public class SurveyOverviewActivity extends Activity {
 
 	// handle completed survey
 	public void onActivityResult(int requestCode, int resultCode, Intent data) {
-
-		if (requestCode == SURVEY_ACTIVITY) {
+		if (requestCode == SURVEY_ACTIVITY || requestCode == SELECT_LOCALE_ACTIVITY) {
 			// Make sure the request was successful
 			if (resultCode == RESULT_OK) {
 				ViewUtil.showConfirmDialog(R.string.submitcompletetitle,

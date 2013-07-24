@@ -30,6 +30,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.waterforpeople.mapping.app.gwt.client.survey.MetricDto;
 import org.waterforpeople.mapping.app.gwt.client.survey.QuestionDto;
 import org.waterforpeople.mapping.app.util.DtoMarshaller;
 import org.waterforpeople.mapping.app.web.rest.dto.QuestionPayload;
@@ -38,7 +39,9 @@ import org.waterforpeople.mapping.dao.QuestionAnswerStoreDao;
 
 import com.gallatinsystems.common.Constants;
 import com.gallatinsystems.framework.exceptions.IllegalDeletionException;
+import com.gallatinsystems.metric.dao.MetricDao;
 import com.gallatinsystems.metric.dao.SurveyMetricMappingDao;
+import com.gallatinsystems.metric.domain.Metric;
 import com.gallatinsystems.metric.domain.SurveyMetricMapping;
 import com.gallatinsystems.survey.dao.QuestionDao;
 import com.gallatinsystems.survey.dao.QuestionOptionDao;
@@ -256,6 +259,7 @@ public class QuestionRestService {
 					questionOptionDao.saveOptionInStringByQuestion(keyId,
 							questionDto.getOptionList());
 
+					// FIXME do we still need this? is it used?
 					if (questionDto.getMetricId() != null) {
 						// delete existing mappings
 						surveyMetricMappingDao.deleteMetricMapping(keyId);
@@ -269,12 +273,34 @@ public class QuestionRestService {
 						newMapping.setSurveyQuestionId(keyId);
 						surveyMetricMappingDao.save(newMapping);
 					}
-					q = questionDao.save(q);
 
+					List<Long> mList = new ArrayList<Long>();
+					if (questionDto.getNewMetricName() != null && questionDto.getNewMetricName().length() > 0){
+						// we need to create a new metric
+						MetricDao mDao = new MetricDao();
+						Metric metr = new Metric();
+						metr.setName(questionDto.getNewMetricName());
+						// FIXME for now, the project Id is the same as the surveyId
+						metr.setProjectId(questionDto.getSurveyId());
+						metr = mDao.save(metr);
+
+						MetricDto mDto = new MetricDto();
+						DtoMarshaller.copyToDto(metr, mDto);
+						response.put("metrics", mDto);
+
+						mList.add(metr.getKey().getId());
+						q.setMetricId(metr.getKey().getId());
+					}
+
+					q = questionDao.save(q);
 					dto = new QuestionDto();
 					DtoMarshaller.copyToDto(q, dto);
 					dto.setOptionList(questionOptionDao
 							.listOptionInStringByQuestion(dto.getKeyId()));
+
+					if (mList != null && mList.size() > 0){
+						dto.setMetrics(mList);
+					}
 					statusDto.setStatus("ok");
 					statusDto.setMessage("");
 				}
@@ -306,26 +332,10 @@ public class QuestionRestService {
 			// copy the properties, except the createdDateTime property, because
 			// it is set in the Dao.
 			BeanUtils.copyProperties(questionDto, q, new String[] {
-					"createdDateTime", "type", "optionList" });
+					"createdDateTime", "type", "optionList", "newMetricName"});
 			if (questionDto.getType() != null)
 				q.setType(Question.Type.valueOf(questionDto.getType()
 						.toString()));
-
-			// make room by moving items up
-			// List<Question> questions = questionDao
-			// .listQuestionsInOrderForGroup(questionDto
-			// .getQuestionGroupId());
-			// Integer insertAfterOrder = questionDto.getOrder();
-			// if (questions != null) {
-			// for (Question question : questions) {
-			// if (question.getOrder() > insertAfterOrder) {
-			// question.setOrder(question.getOrder() + 1);
-			// question = questionDao.save(question);
-			// }
-			// }
-			// }
-			//
-			// q.setOrder(insertAfterOrder + 1);
 			q = questionDao.save(q);
 
 			dto = new QuestionDto();
@@ -333,10 +343,8 @@ public class QuestionRestService {
 			statusDto.setStatus("ok");
 			statusDto.setMessage("");
 		}
-
 		response.put("meta", statusDto);
 		response.put("question", dto);
 		return response;
 	}
-
 }

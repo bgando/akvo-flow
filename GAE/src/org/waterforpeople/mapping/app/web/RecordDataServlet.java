@@ -26,10 +26,13 @@ import org.json.JSONObject;
 import org.waterforpeople.mapping.app.web.dto.RecordDataDto;
 import org.waterforpeople.mapping.app.web.dto.RecordDataRequest;
 import org.waterforpeople.mapping.app.web.dto.RecordDataResponse;
+import org.waterforpeople.mapping.app.web.dto.RecordsMetaDto;
 
 import com.gallatinsystems.framework.rest.AbstractRestApiServlet;
 import com.gallatinsystems.framework.rest.RestRequest;
 import com.gallatinsystems.framework.rest.RestResponse;
+import com.gallatinsystems.metric.dao.MetricDao;
+import com.gallatinsystems.metric.domain.Metric;
 import com.gallatinsystems.survey.dao.QuestionDao;
 import com.gallatinsystems.survey.dao.SurveyDAO;
 import com.gallatinsystems.survey.domain.Question;
@@ -113,6 +116,18 @@ public class RecordDataServlet extends AbstractRestApiServlet {
 				}
 			}
 
+			RecordsMetaDto metaDto = new RecordsMetaDto();
+			MetricDao mDao = new MetricDao();
+			if (QuestionList.size() > 0){
+				for (Question q : QuestionList){
+					if (q.getMetricId() != null){
+						Metric m = mDao.getByKey(q.getMetricId());
+						String mName = m != null ? m.getName() : "";
+						metaDto.addItem(q.getKey().getId(), mName, q.getIncludeInList());
+					}
+				}
+			}
+
 			SurveyedLocaleDao slDao = new SurveyedLocaleDao();
 			for (SurveyedLocale sl : slList) {
 				RecordDataDto dto = new RecordDataDto();
@@ -121,17 +136,22 @@ public class RecordDataServlet extends AbstractRestApiServlet {
 				dto.setLat(sl.getLatitude());
 				dto.setLon(sl.getLongitude());
 
-				// for each question, get the latest surveyalValue
+				// for each question which has a metric, get the latest surveyalValue
 				// with that surveyedLocaleId and questionId and order by time desc
+				// FIXME this should be done through metrics as well, as we want to include
+				// FIXME the latest value for a certain metric, regardless of which question made it
 				if (QuestionList.size() > 0){
 					for (Question q : QuestionList){
-						List<SurveyalValue> sv = slDao.listValuesByLocaleAndQuestion(sl.getKey().getId(),q.getKey().getId());
-						if (sv != null && sv.size() > 0) {
-							if (!sv.get(0).getQuestionType().equals("GEO")
-									&& !sv.get(0).getQuestionType().equals("IMAGE")) {
-								dto.addProperty(
+						// only include questions which have a metric
+						if (q.getMetricId() != null){
+							List<SurveyalValue> sv = slDao.listValuesByLocaleAndQuestion(sl.getKey().getId(),q.getKey().getId());
+							if (sv != null && sv.size() > 0) {
+								if (!sv.get(0).getQuestionType().equals("GEO")
+										&& !sv.get(0).getQuestionType().equals("IMAGE")) {
+									dto.addProperty(
 										sv.get(0).getSurveyQuestionId(),
 										sv.get(0).getStringValue() != null ? sv.get(0).getStringValue() : "");
+								}
 							}
 						}
 					}
@@ -139,6 +159,7 @@ public class RecordDataServlet extends AbstractRestApiServlet {
 				dtoList.add(dto);
 			}
 			resp.setRecordData(dtoList);
+			resp.setRecordsMeta(metaDto);
 		}
 		resp.setCursor(cursor);
 		return resp;
@@ -164,6 +185,12 @@ public class RecordDataServlet extends AbstractRestApiServlet {
 					((JSONObject) arr.get(i)).put("answerValues", rdResp
 							.getRecordData().get(i).getAnswerValues());
 				}
+			}
+			JSONObject meta = result.getJSONObject("recordsMeta");
+			if (meta != null){
+				meta.put("questionIds", rdResp.getRecordsMeta().getQuestionIds());
+				meta.put("metricNames", rdResp.getRecordsMeta().getMetricNames());
+				meta.put("includeInList", rdResp.getRecordsMeta().getIncludeInList());
 			}
 		}
 		getResponse().getWriter().println(result.toString());

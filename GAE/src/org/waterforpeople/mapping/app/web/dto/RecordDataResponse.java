@@ -29,6 +29,7 @@ import com.gallatinsystems.framework.rest.RestResponse;
 public class RecordDataResponse extends RestResponse {
 	private static final long serialVersionUID = 1548249617327473969L;
 	private List<RecordDataDto> recordData;
+	private RecordsMetaDto recordsMeta;
 	private String cursor;
 	private Long recordCount;
 	private List<Long> dispQIds;
@@ -63,5 +64,13 @@ public class RecordDataResponse extends RestResponse {
 
 	public void setRecordCount(Long recordCount) {
 		this.recordCount = recordCount;
+	}
+
+	public RecordsMetaDto getRecordsMeta() {
+		return recordsMeta;
+	}
+
+	public void setRecordsMeta(RecordsMetaDto recordsMeta) {
+		this.recordsMeta = recordsMeta;
 	}
 }

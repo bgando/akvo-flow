@@ -35,7 +35,6 @@ import com.gallatinsystems.survey.device.activity.SurveyViewActivity;
 import com.gallatinsystems.survey.device.dao.SurveyDbAdapter;
 import com.gallatinsystems.survey.device.domain.Question;
 import com.gallatinsystems.survey.device.util.ConstantUtil;
-import com.gallatinsystems.survey.device.util.ViewUtil;
 
 /**
  * this tab handles rendering of all validation errors so the user can see what
@@ -50,7 +49,7 @@ public class SubmitTabContentFactory extends SurveyTabContentFactory {
 	private static final int DEFAULT_WIDTH = 200;
 	private static final int HEADING_TEXT_SIZE = 20;
 	private static final String HEADING_COLOR = "red";
-	private static final int RESULT_OK = 1;
+	private static final int RESULT_OK = -1;
 
 	public SubmitTabContentFactory(SurveyViewActivity c,
 			SurveyDbAdapter dbAdaptor, float textSize, String defaultLang,

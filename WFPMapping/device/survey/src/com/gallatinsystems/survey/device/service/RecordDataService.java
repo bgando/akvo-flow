@@ -49,7 +49,6 @@ import com.gallatinsystems.survey.device.util.StatusUtil;
 public class RecordDataService extends IntentService {
 	private int result = Activity.RESULT_CANCELED;
 	private static final String TAG = "RECORD_DATA_SERVICE";
-
 	private static final String RECORD_SERVICE_PATH = "/recorddata?projectId=";
 	private static final String PHONE_PARAM = "&devicePhoneNumber=";
 	private static final String DEV_ID_PARAM = "&devId=";
@@ -191,18 +190,23 @@ public class RecordDataService extends IntentService {
 			if (response != null) {
 				JSONObject jsonObj = new JSONObject(response);
 
+				// save meta info
+				JSONObject recordsMeta = jsonObj.getJSONObject("recordsMeta");
+				JSONArray questionIdsArray = new JSONArray(recordsMeta.getString("questionIds"));
+				JSONArray metricNamesArray = new JSONArray(recordsMeta.getString("metricNames"));
+				JSONArray includeInListArray = new JSONArray(recordsMeta.getString("includeInList"));
+				databaseAdaptor.createOrUpdateRecordMeta(projectId, questionIdsArray, metricNamesArray, includeInListArray);
+
 				// save records
 				JSONArray recordItemArr = jsonObj.getJSONArray("recordData");
 				int recordItemArrLen = recordItemArr.length();
 				responseCount = recordItemArrLen;
 				for (int i = 0; i < recordItemArrLen; i++) {
-
 					Double lat;
 					Double lon;
-					String id = recordItemArr.getJSONObject(i).getString("id").toString();
-					Log.v(TAG,"processing " + id);
+					String uuid = recordItemArr.getJSONObject(i).getString("id").toString();
+					Log.v(TAG,"processing " + uuid);
 					String lastSDate = recordItemArr.getJSONObject(i).getString("lastSDate").toString();
-					Integer projectIdInt = Integer.parseInt(projectId);
 					try {
 						lat = Double.parseDouble(recordItemArr.getJSONObject(i).getString("lat").toString());
 						lon = Double.parseDouble(recordItemArr.getJSONObject(i).getString("lon").toString());
@@ -213,8 +217,7 @@ public class RecordDataService extends IntentService {
 
 					JSONArray questionIdArray = new JSONArray(recordItemArr.getJSONObject(i).getString("questionIds"));
 					JSONArray answerValArray = new JSONArray(recordItemArr.getJSONObject(i).getString("answerValues"));
-
-					Long slId = databaseAdaptor.createOrUpdateSurveyedLocale(id, projectIdInt, lastSDate, lat, lon);
+					Long slId = databaseAdaptor.createOrUpdateSurveyedLocale(uuid, projectId, lastSDate, lat, lon);
 					databaseAdaptor.createOrUpdateSurveyalValues(slId, questionIdArray, answerValArray);
 				}
 			}

@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.UUID;
 
 import org.json.JSONArray;
@@ -38,6 +39,8 @@ import com.gallatinsystems.survey.device.domain.FileTransmission;
 import com.gallatinsystems.survey.device.domain.PointOfInterest;
 import com.gallatinsystems.survey.device.domain.QuestionResponse;
 import com.gallatinsystems.survey.device.domain.Survey;
+import com.gallatinsystems.survey.device.domain.SurveyedLocale;
+import com.gallatinsystems.survey.device.domain.SurveyedLocaleValue;
 import com.gallatinsystems.survey.device.util.ConstantUtil;
 import com.gallatinsystems.survey.device.util.PropertyUtil;
 
@@ -96,10 +99,12 @@ public class SurveyDbAdapter {
 
 	// surveyed locale cols. Lat, Lon, status, answer defined above
 	public static final String PROJECT_COL = "project_id";
-	public static final String LOCALE_COL = "locale_id";
+	public static final String LOCALE_UUID_COL = "locale_uuid";
 	public static final String LAST_SUBMITTED_COL = "last_submitted_date";
 	public static final String SURVEYED_LOCALE_COL = "surveyed_locale_id";
 	public static final String QUESTION_COL = "question_id";
+	public static final String METRIC_NAME_COL = "metric_name";
+	public static final String INCLUDE_IN_LIST_COL = "include_in_list";
 	private static final String TAG = "SurveyDbAdapter";
 	private DatabaseHelper databaseHelper;
 	private SQLiteDatabase database;
@@ -128,9 +133,13 @@ public class SurveyDbAdapter {
 
 	private static final String TRANSMISSION_HISTORY_TABLE_CREATE = "create table transmission_history (_id integer primary key, survey_respondent_id integer not null, status text, filename text, trans_start_date long, delivered_date long);";
 
-	private static final String SURVEYED_LOCALE_TABLE_CREATE = "create table surveyed_locale (_id integer primary key autoincrement, project_id integer not null, locale_id text, last_submitted_date text, lat real, lon real, status integer)";
+	private static final String SURVEYED_LOCALE_TABLE_CREATE = "create table surveyed_locale (_id integer primary key autoincrement, project_id integer not null, locale_uuid text, last_submitted_date text, lat real, lon real, status integer)";
 
 	private static final String SURVEYED_LOCALE_VAL_TABLE_CREATE = "create table surveyed_locale_val (_id integer primary key autoincrement, surveyed_locale_id integer not null, question_id text, answer_value text)";
+
+	private static final String LOCALE_VAL_INDEX_CREATE = "create index locale_val_index on surveyed_locale_val (answer_value COLLATE NOCASE)";
+
+	private static final String RECORD_META_TABLE_CREATE = "create table record_meta (_id integer primary key autoincrement, project_id text, question_id text, metric_name text, include_in_list boolean)";
 
 	private static final String[] DEFAULT_INSERTS = new String[] {
 		
@@ -165,12 +174,13 @@ public class SurveyDbAdapter {
 	private static final String TRANSMISSION_HISTORY_TABLE = "transmission_history";
 	private static final String SURVEYED_LOCALE_TABLE = "surveyed_locale";
 	private static final String SURVEYED_LOCALE_VAL_TABLE = "surveyed_locale_val";
-
+	private static final String LOCALE_VAL_INDEX = "locale_val_index";
+	private static final String RECORD_META_TABLE = "record_meta";
 	private static final String RESPONSE_JOIN = "survey_respondent LEFT OUTER JOIN survey_response ON (survey_respondent._id = survey_response.survey_respondent_id) LEFT OUTER JOIN user ON (user._id = survey_respondent.user_id)";
 	private static final String PLOT_JOIN = "plot LEFT OUTER JOIN plot_point ON (plot._id = plot_point.plot_id) LEFT OUTER JOIN user ON (user._id = plot.user_id)";
 	private static final String RESPONDENT_JOIN = "survey_respondent LEFT OUTER JOIN survey ON (survey_respondent.survey_id = survey._id)";
 
-	private static final int DATABASE_VERSION = 76;
+	private static final int DATABASE_VERSION = 80;
 
 	private final Context context;
 
@@ -207,6 +217,9 @@ public class SurveyDbAdapter {
 			db.execSQL(TRANSMISSION_HISTORY_TABLE_CREATE);
 			db.execSQL(SURVEYED_LOCALE_TABLE_CREATE);
 			db.execSQL(SURVEYED_LOCALE_VAL_TABLE_CREATE);
+			db.execSQL(RECORD_META_TABLE_CREATE);
+			db.execSQL(LOCALE_VAL_INDEX_CREATE);
+
 			for (int i = 0; i < DEFAULT_INSERTS.length; i++) {
 				db.execSQL(DEFAULT_INSERTS[i]);
 			}			
@@ -229,6 +242,8 @@ public class SurveyDbAdapter {
 				db.execSQL("DROP TABLE IF EXISTS " + TRANSMISSION_HISTORY_TABLE);
 				db.execSQL("DROP TABLE IF EXISTS " + SURVEYED_LOCALE_TABLE);
 				db.execSQL("DROP TABLE IF EXISTS " + SURVEYED_LOCALE_VAL_TABLE);
+				db.execSQL("DROP INDEX IF EXISTS " + LOCALE_VAL_INDEX);
+				db.execSQL("DROP TABLE IF EXISTS " + RECORD_META_TABLE);
 				onCreate(db);
 			} else if (oldVersion < 75) {
 
@@ -301,9 +316,15 @@ public class SurveyDbAdapter {
 					runSQL("insert into preferences values('remoteexception.upload','0')",
 							db);
 				}
-			} else if (oldVersion < 76){
-				runSQL(SURVEYED_LOCALE_TABLE_CREATE, db);
-				runSQL(SURVEYED_LOCALE_VAL_TABLE_CREATE, db);
+			} else if (oldVersion < 80){
+				db.execSQL("DROP TABLE IF EXISTS " + SURVEYED_LOCALE_TABLE);
+				db.execSQL("DROP TABLE IF EXISTS " + SURVEYED_LOCALE_VAL_TABLE);
+				db.execSQL("DROP TABLE IF EXISTS " + RECORD_META_TABLE);
+				db.execSQL("DROP INDEX IF EXISTS " + LOCALE_VAL_INDEX);
+				db.execSQL(SURVEYED_LOCALE_TABLE_CREATE);
+				db.execSQL(SURVEYED_LOCALE_VAL_TABLE_CREATE);
+				db.execSQL(RECORD_META_TABLE_CREATE);
+				db.execSQL(LOCALE_VAL_INDEX_CREATE);
 			}
 
 			// now handle defaults
@@ -1720,7 +1741,7 @@ public class SurveyDbAdapter {
 	 */
 	public Cursor findSurveyedLocaleByIdentifier(String id) {
 		Cursor cursor = database.query(SURVEYED_LOCALE_TABLE, new String[] { PK_ID_COL,
-				LOCALE_COL, PROJECT_COL, LAST_SUBMITTED_COL, LAT_COL, LON_COL, STATUS_COL }, LOCALE_COL + "=?",
+				LOCALE_UUID_COL, PROJECT_COL, LAST_SUBMITTED_COL, LAT_COL, LON_COL, STATUS_COL }, LOCALE_UUID_COL + "=?",
 				new String[] { id }, null, null, null);
 		if (cursor != null) {
 			cursor.moveToFirst();
@@ -1735,7 +1756,7 @@ public class SurveyDbAdapter {
 	 */
 	public Cursor listAllSurveyedLocales() {
 		Cursor cursor = database.query(SURVEYED_LOCALE_TABLE, new String[] {
-				PK_ID_COL, LOCALE_COL, PROJECT_COL, LAST_SUBMITTED_COL, LAT_COL, LON_COL, STATUS_COL },
+				PK_ID_COL, LOCALE_UUID_COL, PROJECT_COL, LAST_SUBMITTED_COL, LAT_COL, LON_COL, STATUS_COL },
 				null, null, null, null, null, null);
 		if (cursor != null) {
 			cursor.moveToFirst();
@@ -1757,6 +1778,32 @@ public class SurveyDbAdapter {
 			cursor.moveToFirst();
 		}
 		return cursor;
+	}
+
+	/**
+	 * lists all surveyal values for the locale id passed in
+	 * @param slId
+	 * @return
+	 */
+	public List<SurveyedLocaleValue> listSurveyedLocaleValuesByLocaleId(Long slId) {
+		Cursor cursor = database.query(SURVEYED_LOCALE_VAL_TABLE, new String[] {
+				PK_ID_COL, QUESTION_COL, ANSWER_COL, SURVEYED_LOCALE_COL}, SURVEYED_LOCALE_COL + "=?",
+				new String[] {slId.toString()}, null, null, null);
+
+		List<SurveyedLocaleValue> slvList = new ArrayList<SurveyedLocaleValue>();
+		if (cursor != null && cursor.moveToFirst()){
+			do {
+				SurveyedLocaleValue slv = new SurveyedLocaleValue();
+				slv.setId(cursor.getLong(cursor
+					.getColumnIndexOrThrow(PK_ID_COL)));
+				slv.setQuestionId(cursor.getString(cursor
+					.getColumnIndexOrThrow(QUESTION_COL)));
+				slv.setAnswerValue(cursor.getString(cursor
+					.getColumnIndexOrThrow(ANSWER_COL)));
+				slvList.add(slv);
+			} while (cursor.moveToNext());
+		}
+		return slvList;
 	}
 
 	/**
@@ -1807,16 +1854,16 @@ public class SurveyDbAdapter {
 	 * @param lon
 	 * @return
 	 */
-	public long createOrUpdateSurveyedLocale(String id, int projectId, String lastSDate, Double lat, Double lon) {
+	public long createOrUpdateSurveyedLocale(String uuid, String projectId, String lastSDate, Double lat, Double lon) {
 		ContentValues initialValues = new ContentValues();
-		initialValues.put(LOCALE_COL, id);
+		initialValues.put(LOCALE_UUID_COL, uuid);
 		initialValues.put(PROJECT_COL, projectId);
 		initialValues.put(LAST_SUBMITTED_COL, lastSDate);
 		initialValues.put(LAT_COL, lat);
 		initialValues.put(LON_COL, lon);
 		initialValues.put(STATUS_COL, 0);
 
-		Cursor existingSL = findSurveyedLocaleByIdentifier(id);
+		Cursor existingSL = findSurveyedLocaleByIdentifier(uuid);
 		Long slId = null;
 		if (existingSL != null && existingSL.moveToFirst()){
 			slId = (long) existingSL.getInt(existingSL.getColumnIndexOrThrow(PK_ID_COL));
@@ -1841,7 +1888,7 @@ public class SurveyDbAdapter {
 	 * @param answerValArray
 	 * @return
 	 */
-	public void createOrUpdateSurveyalValues(long slId, JSONArray questionIdArray, JSONArray answerValArray) {
+	public void createOrUpdateSurveyalValues(Long slId, JSONArray questionIdArray, JSONArray answerValArray) {
 		// first delete all surveyalValues with slId = surveyed_locale_id
 		deleteSurveyalValuesById(Long.valueOf(slId));
 
@@ -1861,6 +1908,39 @@ public class SurveyDbAdapter {
 
 			if (!failed) {
 				database.insert(SURVEYED_LOCALE_VAL_TABLE, null, initialValues);
+			}
+		}
+	}
+
+	private void deleteRecordMetaByProjectId(String projectId) {
+		database.delete(RECORD_META_TABLE, PROJECT_COL + "=?",
+				new String[] { projectId });
+	}
+
+	public void createOrUpdateRecordMeta(String projectId,
+			JSONArray questionIdsArray, JSONArray metricNamesArray,
+			JSONArray includeInListArray) {
+
+		// first delete all recordsMeta data by projectId
+		deleteRecordMetaByProjectId(projectId);
+
+		// recreate all record meta data
+		boolean failed = false;
+		for (int i = 0; i < questionIdsArray.length(); i++){
+			failed = false;
+			ContentValues initialValues = new ContentValues();
+			initialValues.put(PROJECT_COL, projectId);
+			try {
+				initialValues.put(QUESTION_COL, questionIdsArray.getString(i));
+				initialValues.put(METRIC_NAME_COL, metricNamesArray.getString(i));
+				initialValues.put(INCLUDE_IN_LIST_COL, includeInListArray.getBoolean(i));
+			} catch (JSONException e) {
+				Log.e(TAG, "Problem with parsing questionId - answer pairs" );
+				failed = true;
+			}
+
+			if (!failed) {
+				database.insert(RECORD_META_TABLE, null, initialValues);
 			}
 		}
 	}

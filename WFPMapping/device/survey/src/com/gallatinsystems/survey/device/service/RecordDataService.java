@@ -75,7 +75,7 @@ public class RecordDataService extends IntentService {
 	protected void onHandleIntent(Intent intent) {
 		int result = 0;
 		String action = null;
-
+		props = new PropertyUtil(getResources());
 		if (intent != null) {
 			String surveyId = null;
 			if (intent.getExtras() != null) {

@@ -134,6 +134,20 @@ public class SurveyInstanceDAO extends BaseDAO<SurveyInstance> {
 					si.setDeviceIdentifier(parts[8].trim());
 				}
 			}
+
+			// if one of the answer types is IDENT, interpret this as the
+			// identifier of the surveyedLocale
+			if (parts[3].equals("IDENT")){
+				SurveyedLocaleDao slDao = new SurveyedLocaleDao();
+				SurveyedLocale sl = slDao.getByIdentifier(parts[4]);
+				// if we find an existing surveyedLocale with the same identifier,
+				// set the surveyedLocaleId field on the instance
+				// If we don't find it, it will be handled in SurveyalRestServlet.
+				if (sl != null){
+					si.setSurveyedLocaleId(sl.getKey().getId());
+				}
+			}
+
 			// if this is the first time round, save the surveyInstance or use an existing one
 			if (si.getSurveyId() == null) {
 				try {
@@ -170,23 +184,8 @@ public class SurveyInstanceDAO extends BaseDAO<SurveyInstance> {
 			}
 
 			if (qasDao.listBySurveyInstance(si.getKey().getId(),
-					si.getSurveyId(), parts[2].trim()).size() != 0) {
-				log.log(Level.INFO, "Skipping QAS already present in datasore [SurveyInstance, Survey, Question]: " + si.getKey().getId() + ", " + si.getSurveyId() + ", " + parts[2].trim());
-				continue;
-			}
-
-			// if one of the answer types is IDENT, interpret this as the
-			// identifier of the surveyedLocale
-			if (parts[3].equals("IDENT")){
-				SurveyedLocaleDao slDao = new SurveyedLocaleDao();
-				SurveyedLocale sl = slDao.getByIdentifier(parts[4]);
-				// if we find an existing surveyedLocale with the same identifier,
-				// set the surveyedLocaleId field on the instance
-				// If we don't find it, it will be handled in SurveyalRestServlet.
-				if (sl != null){
-					si.setSurveyedLocaleId(sl.getKey().getId());
-					si = save(si);
-				}
+					si.getSurveyId(), parts[2].trim()).size() != 0 || parts[3].equals("IDENT")) {
+				log.log(Level.INFO, "Skipping QAS already present in datastore [SurveyInstance, Survey, Question]: " + si.getKey().getId() + ", " + si.getSurveyId() + ", " + parts[2].trim());
 				continue;
 			}
 

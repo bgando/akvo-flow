@@ -456,7 +456,16 @@
         <property name="collectionDate" direction="desc"/>
     </datastore-index>
     
+     <datastore-index kind="SurveyalValue" ancestor="false" source="manual">
+        <property name="surveyQuestionId" direction="asc"/>
+        <property name="collectionDate" direction="desc"/>
+    </datastore-index>
     
+     <datastore-index kind="SurveyalValue" ancestor="false" source="manual">
+      	<property name="surveyedLocaleId" direction="asc"/>   
+        <property name="collectionDate" direction="desc"/>
+    </datastore-index>
+     
  	<datastore-index kind="SurveyedLocale" ancestor="false">
         <property name="localeType" direction="asc"/>
         <property name="lastSurveyedDate" direction="asc"/>

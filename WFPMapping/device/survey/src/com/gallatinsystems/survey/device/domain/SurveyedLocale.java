@@ -116,9 +116,13 @@ public class SurveyedLocale implements Serializable {
 			builder.append(".    dist: unknown\n") ;
 		}
 
+		if (getLastSubmittedDate() != null){
+			builder.append("Last updated: ").append(getLastSubmittedDate());
+		}
+
 		if (metricNames != null && metricNames.size() > 0){
 			for (int i = 0 ; i < metricNames.size(); i++){
-				builder.append(metricNames.get(i)).append(" : ").append(metricValues.get(i)).append("\n");
+				builder.append("\n").append(metricNames.get(i)).append(" : ").append(metricValues.get(i));
 			}
 		}		
 		return builder.toString();
